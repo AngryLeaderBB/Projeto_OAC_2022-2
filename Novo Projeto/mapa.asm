@@ -63,6 +63,7 @@ sw t0,4(a0)
 
 
 LOOP:	
+	li a5,0
 	la a0, mapaTeste	# Load map
 	image(a0, 0, 0)		#
 	

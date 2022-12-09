@@ -1,0 +1,139 @@
+// Type your code here, or load an example.
+#define VGA_ADDRESS 0xFF000000
+
+void faster_rectangle(int color, int x_lower,
+ int y_lower, int x_upper, int y_upper){
+    
+    unsigned char *Frame, *aux;
+	Frame = (unsigned char *) VGA_ADDRESS;
+
+
+    for (int i = x_lower; i <= x_upper; i++){
+        for (int j = y_lower; j <= y_upper; j++){
+            aux = Frame + (i + j*320);
+	        *aux = color;
+        }
+    }
+
+}
+
+
+//////////////////////////////////
+
+
+// Type your code here, or load an example.
+#define VGA_ADDRESS 0xFF000000
+
+void faster_rectangle(char color, int x_lower,
+ int y_lower, int x_upper, int y_upper){
+    
+    //unsigned char *Frame, *aux;
+    unsigned int *Frame_faster, *aux_faster;
+    
+    int new_color = color;
+    new_color += new_color << 8;
+    new_color += new_color << 16;
+
+	//Frame = (unsigned char *) VGA_ADDRESS;
+    Frame_faster = (unsigned int *) VGA_ADDRESS;
+
+    int rem_lower = x_lower + (-x_lower % 5), rem_upper = x_upper % 5;
+
+
+    //for (int i = x_lower; i < rem_lower; i++){
+    //    for (int j = y_lower; j <= y_upper; j++){
+    //        aux = Frame + (i + j*320);
+	//        *aux = color;
+    //    }
+    //}
+
+
+        aux_faster = Frame_faster+x_lower;
+	    *aux_faster = new_color;
+   
+
+    //for (int i = x_upper-rem_upper+1; i <= x_upper+rem_upper; i++){
+    //    for (int j = y_lower; j <= y_upper; j++){
+    //        aux = Frame + (i + j*320);
+    //        *aux = color;
+    //    }
+    //}
+
+}
+
+////////////////////// life bar
+
+#define VGA_ADDRESS 0xFF000000
+
+void bar(int color, int x,
+ int y, int perc, int width, int height){
+    
+    unsigned char *Frame, *aux;
+	Frame = (unsigned char *) VGA_ADDRESS;
+
+
+    for (int i = x; i < x + (perc*width)/100; i++){
+        for (int j = y; j < y+height; j++){
+            aux = Frame + (i + j*320);
+	        *aux = color;
+        }
+    }
+
+}
+
+////////////////////// intersc
+
+
+//bool doOverlap(Point l1, Point r1, Point l2, Point r2)
+bool doOverlap(int rect1[], int rect2[])
+{
+    // l1.x = rect1[0], l1.y = rect1[1]
+    // r1.x = rect1[2], r1.y = rect1[3]
+
+    // l2.x = rect2[0], l2.y = rect2[1]
+    // r2.x = rect2[2], r2.y = rect2[3]
+
+    // If one rectangle is on left side of other
+    if (rect1[0] > rect2[2] || rect2[0] > rect1[2])
+        return false;
+
+    // If one rectangle is above other
+    if (rect1[3]> rect2[1] || rect2[3] > rect1[1])
+        return false;
+
+    return true;
+}
+
+void interect(int rect1[], int rect2[], int new_position[], int old_position[]){
+    if (doOverlap(rect1, rect2)){
+        new_position[0] = old_position[0];
+        new_position[1] = old_position[1];
+    }
+}
+
+
+/////////////////// print char
+
+char print_char(char a0, int a1, int a2, int a3, bool a4){
+    return a0+(char)a1;
+}
+
+int text_box(int *name, int current_index, 
+int x, int y, int max_letters, int max_lines) {
+
+    char *pointer = (char *)(name+1);
+ 
+    for (int i = 0; i < max_lines; i++){
+        for (int j = 0; j < max_letters; j++){
+            if (current_index > *name){
+                break;
+            }
+            print_char(*pointer, x, y, 111, false);
+            pointer++;
+            current_index++;
+        }
+    }
+
+    return current_index;
+}
+
