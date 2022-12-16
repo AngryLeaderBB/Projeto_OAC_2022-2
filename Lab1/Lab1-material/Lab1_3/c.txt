@@ -1,0 +1,202 @@
+#define VGA_ADDRESS 0xFF000000
+
+void circle(int color, int x,
+ int y, int r){
+    
+    unsigned char *Frame, *aux;
+	Frame = (unsigned char *) VGA_ADDRESS;
+
+
+    for (int i = x; i <= x+2*r; i++){
+        for (int j = y; j <= y+2*r; j++){
+            if (((x+r-i)*(x+r-i) + (y+r-j)*(y+r-j)) < r*r){
+                aux = Frame + (i + j*320);
+	            *aux = color;
+            }
+        }
+    }
+
+}
+
+
+void rectangle(int color, int x_lower,
+ int y_lower, int x_upper, int y_upper){
+    
+    unsigned char *Frame, *aux;
+	Frame = (unsigned char *) VGA_ADDRESS;
+
+
+    for (int i = x_lower; i <= x_upper; i++){
+        for (int j = y_lower; j <= y_upper; j++){
+            aux = Frame + (i + j*320);
+	        *aux = color;
+        }
+    }
+
+}
+
+
+void print_board(int board[8][8]){
+    int x = 45, y = 43;
+    for (int i = 0; i < 8; i++){
+        for (int j = 0; j < 8; j++){
+            switch (board[i][j]){
+                case 1:
+                    circle(6, x+30*i, y+20*j, 8);
+                    break;
+                case 2:
+                    circle(192, x+30*i, y+20*j, 8);
+                    break;
+                default:
+                    circle(0, x+30*i, y+20*j, 8);
+            }
+            
+        }
+    }
+}
+
+int animation(int x, int y, int color){
+    int new_color;
+    switch (color){
+                case 1:
+                    new_color = 6;
+                    break;
+                case 2:
+                    new_color = 192;
+                    break;
+                default:
+                    new_color = 0;
+    }
+
+    for (int i=0; i < y; i++){
+        circle(new_color, 45+30*x, 43+20*i, 8);
+        sleep(100);
+        circle(0, 45+30*x, 43+20*i, 8);
+    }
+    circle(new_color, 45+30*x, 43+20*y, 8);
+    return 0;
+}
+
+
+int add_element(int board[8][8], int index, int color){
+
+    if (board[index][0]){
+        return -1;
+    }
+
+    for (int i = 0; i < 7; i++){
+        if (board[index][i+1] != 0){
+            board[index][i] = color;
+            animation(index, i, color);
+            return i;       
+        }
+    }
+    
+    board[index][7] = color;
+    animation(index, 7, color);
+    return 7;
+}
+
+bool game_draw(int board[8][8]){
+    for (int i = 0; i < 8; i++){
+        if (board[i][0] == 0){
+            return false;
+        }
+    }
+    return true;
+}
+
+int max(int x, int y){
+    if (x < y) return y;
+    return x;
+}
+
+int min(int x, int y){
+    if (x > y) return y;
+    return x;
+}
+
+bool win_vertical(int board[8][8], int x, int y){
+    int color = board[y][x];
+    int counter;
+    
+    for (int i = max(0, 3-x); i <= min(7-x, 3) ; i++){
+        counter = 0;
+        for (int j = 0; j < 4; j++){
+            if (board[y][x-3+i+j] == color){
+                counter++;
+            };
+        }
+        if (counter == 4){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool win_horizontal(int board[8][8], int x, int y){
+    int color = board[y][x];
+    int counter;
+    
+    for (int i = max(0, 3-y); i <= min(7-y, 3) ; i++){
+        counter = 0;
+        for (int j = 0; j < 4; j++){
+            if (board[y-3+i+j][x] == color){
+                counter++;
+            };
+        }
+        if (counter == 4){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool win_diagonal_decresing(int board[8][8], int x, int y){
+    int color = board[y][x];
+    int counter;
+    
+    for (int i = max(max(0, 3-y), 3-x); i <= min(min(7-y, 3),7-x); i++){
+    //for (int i = max(0, 3-y, 3-x); i <= min(7-y, 7-x, 3); i++){
+        counter = 0;
+        for (int j = 0; j < 4; j++){
+            if (board[y+j-3+i][x+j-3+i] == color){
+                counter++;
+            };
+        }
+        if (counter == 4){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool win_diagonal_incresing(int board[8][8], int x, int y){
+    int color = board[y][x];
+    int counter;
+    
+    for (int i = max(max(0, y-4), 3-x); i <= min(min(y, 3), 7-x); i++){
+    //for (int i = max(0, y-4, 3-x); i <= min(y, 7-x, 3); i++){
+        counter = 0;
+        for (int j = 0; j < 4; j++){
+            if (board[y-j+3-i][x+j-3+i] == color){
+                counter++;
+            };
+        }
+        if (counter == 4){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool game_won(int board[8][8], int x, int y){
+    return win_horizontal(board, x, y) || 
+    win_vertical(board, x, y)||
+    win_diagonal_decresing(board, x, y)||
+    win_diagonal_incresing(board, x, y);
+}
