@@ -48,6 +48,18 @@ Dec:
 .include "battle/battleSelect.data"
 .include "battle/battlePlayer.data"
 .include "battle/battleEnemy.data"
+.include "battle/char.data"
+.include "battle/charFront.data"
+.include "battle/bulFront.data"
+.include "battle/bul.data"
+.include "battle/squirFront.data"
+.include "battle/squir.data"
+.include "battle/rat.data"
+.include "battle/ratFront.data"
+.include "battle/macFront.data"
+.include "battle/mac.data"
+.include "battle/attackSelec.data"
+
 dialogo: .word 321
 .string "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed fringilla metus in accumsan lacinia. Phasellus nec massa mattis, dictum sapien eu, egestas ipsum. Quisque sed ullamcorper quam, ac porta enim. Fusce consequat justo aliquam eros sagittis, id consectetur nulla convallis. Donec lacinia metus vel tortor malesuada"
 
@@ -56,6 +68,14 @@ player_name: .word 12
 
 fight: .word 5
 .string "Fight"
+
+attack1:
+.word 8
+.string "attack 1"
+
+attack2:
+.word 8
+.string "attack 2"
 
 .text
 
@@ -95,6 +115,36 @@ print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
 
 la a0, battleSelect	# Load map
 image(a0, 160, 168)	#
+
+la a0, attackSelec	# Load map
+image(a0, 0, 168)	#
+
+	#la a0, char		# pkmns
+	#la a0, bul
+	#la a0, squir
+	#la a0, rat
+	la a0, mac
+	li a5, 0
+	image(a0, 55, 114)		#
+
+	#la a0, charFront	# pkmns
+	la a0, bulFront
+	#la a0, squirFront
+	#la a0, ratFront
+	#la a0, macFront
+	li a5, 0
+	image(a0, 211, 47)	#
+
+
+la t0, attack1
+li t1, 20
+li t2, 188
+print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+
+la t0, attack2
+li t1, 20
+li t2, 208
+print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
 
 la t0,fight
 li t1, 190
