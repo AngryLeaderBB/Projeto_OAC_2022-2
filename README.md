@@ -22,7 +22,7 @@ Parte 2)
 
 
 Parte 3)
-* 3.1 e 3.2) Bruno (Deve ser entrege entre sexta e sábado dessa semana)
+* 3.1 e 3.2) Bruno (Ainda falta comentar o código kkkkkk, mas já está funcionando)
 * 3.3 e 3.4) Lucas
 
 Lab 2 (Entrega 4/1)
