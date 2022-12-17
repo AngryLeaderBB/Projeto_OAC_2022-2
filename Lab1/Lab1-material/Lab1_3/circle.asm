@@ -21,6 +21,14 @@
 
 .end_macro
 
+.macro colored_string(%x, %y)
+
+li a1, %x
+li a2, %y
+li a7, 104
+ecall
+
+.end_macro
 
 .data
 
@@ -34,6 +42,7 @@ facil: .string "facil"
 medio: .string "medio"
 dificil: .string "dificil"
 
+ai_position: .word 0, 0
 difficult: .word 0
 color: .word 0
 is_color: .word 0
@@ -119,31 +128,25 @@ li a4, 0
 la t0, menu
 
 la a0, facil
-li a1, 85
-li a2, 105
 li a3, 0x33
 lw t1,0(t0)
 add a3, a3, t1
-li a7, 104
-ecall
+colored_string(85, 105)
+
 
 la a0, medio
-li a1, 133
-li a2, 105
 li a3, 0x77
 lw t1,4(t0)
 add a3, a3, t1
-li a7, 104
-ecall
+colored_string(133, 105)
+
 
 la a0, dificil
-li a1, 181
-li a2, 105
 li a3, 0x6
 lw t1,8(t0)
 add a3, a3, t1
-li a7, 104
-ecall
+colored_string(181, 105)
+
 
 addi t0,t0,12
 
@@ -171,10 +174,37 @@ end_menu:
 
 ###################### game
 
-rectangle(0x33, 37, 38, 281, 200)
+la t0, difficult
+lw t0,0(t0)
 
-circle(0x33, 17, 200, 21)
-circle(0x33, 257, 200, 21)
+bne t0,zero,top_not_easy
+la a0, facil
+li a3, 0x33
+colored_string(138, 28)
+j end_top_string
+top_not_easy:
+
+li t1, 1
+
+bne t0, t1,top_not_normal
+la a0, medio
+li a3, 0x77
+colored_string(138, 28)
+j end_top_string
+top_not_normal:
+
+la a0, dificil
+li a3, 0x6
+colored_string(130, 28)
+end_top_string:
+
+
+li s1, 0  # turno
+
+rectangle(89, 37, 38, 281, 200)
+
+circle(89, 17, 200, 21)
+circle(89, 257, 200, 21)
 rectangle(0, 37, 201, 60, 240)
 rectangle(0, 258, 201, 280, 240)
 
@@ -183,7 +213,7 @@ rectangle(0, 258, 201, 280, 240)
 li t0, 0
 li t1, 8
 
-li a0, 48
+li a0, 49
 li a1, 50
 li a2, 207
 li a3, 0x77
@@ -205,23 +235,57 @@ jal print_board
 main_loop:
 
 
-#li a7,5
-#ecall
+beq s1,zero,if_turn_circle
+circle(0xc0, 150, 7, 6)
+j end_turn_circle
+if_turn_circle:
+circle(7, 150, 7, 6)
+end_turn_circle:
+
+la t0, color
+lw t0,0(t0)
+beq s1, t0, get_key
+
+######## AI ############
+
+la t0, difficult
+lw t0,0(t0)
+
+bne t0,zero,not_easy
+jal easy_mode
+j end_ai_command
+not_easy:
+
+li t1, 1
+
+bne t0, t1,not_normal
+la a0, board
+la a1, color
+jal normal_mode
+j end_ai_command
+not_normal:
+
+la a0, board
+la a1, color
+jal hard_mode
+
+end_ai_command:
+
+
+########################
+
+j end_turn
 
 get_key:
-jal key
+	jal key
+	mv s0, a0
+        addi    a0,a0,-49
+        li      t0,7
+        bgtu    a0,t0,get_key
 
-        addi    a4,a0,-48
-        li      a5,9
-        bgtu    a4,a5,ascii_convert
-        addi    a0,a0,-47
-        j number
-ascii_convert:
-        li      a0,0
-    	j get_key
-number:
-      
-addi a0,a0, -1
+
+end_turn:    
+
 
 la t0, y
 sw a0,0(t0)
@@ -276,12 +340,19 @@ if_game_won:
         sw      t0,0(a1)
 next_color:
 
+xori s1,s1, 1
 j main_loop
 
 end:
 
 # rectangle(0x77, 74, 61, 242, 180)
+li a0, 1000
+li a7, 32
+ecall
+
 rectangle(0, 0, 0, 320, 240)
+
+
 # rectangle(0x77, 131, 111, 188, 137)
 
 la a0, winner
@@ -331,6 +402,7 @@ j loop_end_screen
 
 end_loop_screen:
 
+rectangle(0, 131, 111, 188, 137)
 li a7,10
 ecall
 ########################################################################################
@@ -882,4 +954,139 @@ game_won:
         addi    sp,sp,16
         tail    win_diagonal_incresing
 
+easy_mode:
+li a0, 2
+li a1, 8
+li a7, 42
+ecall
+ret
+
+indetify_win_move:
+        addi    sp,sp,-16
+        sw      s0,8(sp)
+        slli    s0,a1,5
+        add     s0,a0,s0
+        lw      a5,0(s0)
+        sw      ra,12(sp)
+        bne     a5,zero,IW65
+        addi    a4,s0,4
+        li      a6,7
+IW60:
+        lw      a3,0(a4)
+        mv      a7,a5
+        addi    a5,a5,1
+        bne     a3,zero,IW67
+        addi    a4,a4,4
+        bne     a5,a6,IW60
+        sw      a2,28(s0)
+        mv      a2,a1
+        li      a1,7
+        call    game_won
+        lw      ra,12(sp)
+        sw      zero,28(s0)
+        lw      s0,8(sp)
+        addi    sp,sp,16
+        jr      ra
+IW65:
+        lw      ra,12(sp)
+        lw      s0,8(sp)
+        li      a0,0
+        addi    sp,sp,16
+        jr      ra
+IW67:
+        slli    a5,a7,2
+        add     s0,s0,a5
+        sw      a2,0(s0)
+        mv      a2,a1
+        mv      a1,a7
+        call    game_won
+        lw      ra,12(sp)
+        sw      zero,0(s0)
+        lw      s0,8(sp)
+        addi    sp,sp,16
+        jr      ra
+normal_mode:
+        lw      a5,0(a1)
+        addi    sp,sp,-32
+        sw      s1,20(sp)
+        addi    a5,a5,1
+        srli    a2,a5,31
+        add     s1,a5,a2
+        andi    s1,s1,1
+        sub     s1,s1,a2
+        sw      s0,24(sp)
+        sw      s2,16(sp)
+        sw      s3,12(sp)
+        sw      ra,28(sp)
+        mv      s2,a0
+        addi    s1,s1,1
+        li      s0,0
+        li      s3,8
+IW70:
+        mv      a1,s0
+        mv      a2,s1
+        mv      a0,s2
+        call    indetify_win_move
+        bne     a0,zero,IW68
+        addi    s0,s0,1
+        bne     s0,s3,IW70
+        #li      s0,0
+        call easy_mode
+        mv s0, a0
+IW68:
+        lw      ra,28(sp)
+        mv      a0,s0
+        lw      s0,24(sp)
+        lw      s1,20(sp)
+        lw      s2,16(sp)
+        lw      s3,12(sp)
+        addi    sp,sp,32
+        jr      ra
+
+hard_mode:
+        addi    sp,sp,-32
+        sw      s3,12(sp)
+        lw      s3,0(a1)
+        sw      s2,16(sp)
+        sw      s0,24(sp)
+        addi    s3,s3,1
+        srli    a5,s3,31
+        add     s2,s3,a5
+        andi    s2,s2,1
+        sub     s2,s2,a5
+        sw      s1,20(sp)
+        sw      s4,8(sp)
+        sw      ra,28(sp)
+        mv      s1,a0
+        addi    s2,s2,1
+        li      s0,0
+        li      s4,8
+HM75:
+        mv      a1,s0
+        mv      a2,s2
+        mv      a0,s1
+        call    indetify_win_move
+        mv      a5,a0
+        mv      a1,s0
+        mv      a2,s3
+        mv      a0,s1
+        bne     a5,zero,HM73
+        call    indetify_win_move
+        bne     a0,zero,HM73
+        addi    s0,s0,1
+        bne     s0,s4,HM75
+        #li      s0,0
+        call easy_mode
+        mv s0,a0
+HM73:
+        lw      ra,28(sp)
+        mv      a0,s0
+        lw      s0,24(sp)
+        lw      s1,20(sp)
+        lw      s2,16(sp)
+        lw      s3,12(sp)
+        lw      s4,8(sp)
+        addi    sp,sp,32
+        jr      ra
+        
 .include "SYSTEMv21.s"
