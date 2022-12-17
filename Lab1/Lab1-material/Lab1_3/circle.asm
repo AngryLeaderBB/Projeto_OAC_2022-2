@@ -340,13 +340,19 @@ if_game_won:
         sw      t0,0(a1)
 next_color:
 
+
+la t0, x
+lw t0,0(t0)
+li t1,-1
+beq t0,t1,main_loop
+
 xori s1,s1, 1
 j main_loop
 
 end:
 
 # rectangle(0x77, 74, 61, 242, 180)
-li a0, 1000
+li a0, 1750
 li a7, 32
 ecall
 
