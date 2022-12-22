@@ -1,4 +1,30 @@
-show(int*, int):
+.data
+.LANCHOR0: .word 9,2,5,1,8,2,4,3,6,7,10,2,32,54,2,12,6,3,1,78,54,23,1,54,2,65,3,6,55,31
+
+.text
+
+main:
+        addi    sp,sp,-16
+        sw      s0,8(sp)
+        lui     s0,%hi(.LANCHOR0)
+        addi    a0,s0,%lo(.LANCHOR0)
+        li      a1,30
+        sw      ra,12(sp)
+        call    show
+        addi    a0,s0,%lo(.LANCHOR0)
+        li      a1,30
+        call    sort
+        addi    a0,s0,%lo(.LANCHOR0)
+        li      a1,30
+        call    show
+        lw      ra,12(sp)
+        lw      s0,8(sp)
+        li      a0,0
+        addi    sp,sp,16
+        li a7, 10
+        ecall
+
+show:
          mv     t0,a0 
          mv     t1,a1 
          mv     t2,zero 
@@ -17,7 +43,7 @@ fim1:   li      a7,11
         ecall 
 
         ret
-swap(int*, int):
+swap:
         slli    a1,a1,2
         addi    a5,a1,4
         add     a5,a0,a5
@@ -27,7 +53,7 @@ swap(int*, int):
         sw      a3,0(a1)
         sw      a4,0(a5)
         ret
-sort(int*, int):
+sort:
         ble     a1,zero,.L4
         li      a4,0
         addi    a7,a4,1
@@ -54,22 +80,3 @@ sort(int*, int):
         bne     a1,a7,.L11
 .L4:
         ret
-main:
-        addi    sp,sp,-16
-        sw      s0,8(sp)
-        lui     s0,%hi(.LANCHOR0)
-        addi    a0,s0,%lo(.LANCHOR0)
-        li      a1,30
-        sw      ra,12(sp)
-        call    show(int*, int)
-        addi    a0,s0,%lo(.LANCHOR0)
-        li      a1,30
-        call    sort(int*, int)
-        addi    a0,s0,%lo(.LANCHOR0)
-        li      a1,30
-        call    show(int*, int)
-        lw      ra,12(sp)
-        lw      s0,8(sp)
-        li      a0,0
-        addi    sp,sp,16
-        jr      ra

@@ -55,8 +55,8 @@ main:
         lw      ra,12(sp)
         lw      s0,8(sp)
         addi    sp,sp,16
-        li a7,10
-        ecall 
+        li a7, 10
+        ecall
 
 show:
         addi    sp,sp,-32
