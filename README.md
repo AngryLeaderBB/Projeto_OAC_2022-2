@@ -6,7 +6,7 @@ por isso é importante manter os materias dos labs em suas respectivas pastas.
 -Qualquer dúvida pergunta nos canais de comunicação.
 
 # Laboratórios
-Lab 1 (Entrega 21/12)
+Lab 1 (Entrega 21/12) ✅
 -
 
 **Eu não sei se as atividades sem nota devem ser adicionadas no relatório.**  
@@ -22,7 +22,7 @@ Parte 2)
 
 
 Parte 3)
-* 3.1 e 3.2) Bruno (Ainda falta comentar o código kkkkkk, mas já está funcionando)
+* 3.1 e 3.2) Bruno 
 * 3.3 e 3.4) Lucas
 
 Lab 2 (Entrega 4/1)
