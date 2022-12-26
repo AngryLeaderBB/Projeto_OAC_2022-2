@@ -1,11 +1,11 @@
 .include "../MACROSv21.s"
-.macro image(%imageAddressRegis , %xLower , %yLower)
+.macro image(%imageAddressRegis , %xLower , %yLower, %orientation)
 	#address is the address of the bitmap display
 
 	mv a0,%imageAddressRegis
 	li a1,%xLower
 	li a2,%yLower
-	
+	li a5, %orientation
 	jal ra,Image
 
 .end_macro
@@ -41,6 +41,7 @@ Dec:
 
 .end_macro
 
+
 .data
 
 .include "battle/battleBG.data"
@@ -68,6 +69,12 @@ player_name: .word 12
 
 fight: .word 5
 .string "Fight"
+pkmn: .word 4
+.string "Pkmn"
+bag: .word 3
+.string "Bag"
+run: .word 3
+.string "Run"
 
 attack1:
 .word 8
@@ -77,26 +84,42 @@ attack2:
 .word 8
 .string "attack 2"
 
+menu_position: .word  0, 0
+lines_columns_select: .word  2, 2
+states_positions_select: .word	1,182,188, 0,247,188
+				2,182,208, 3,247,208
+				
+lines_columns_battle: .word  2, 1
+states_positions_battle: .word	0,12,188, 1,12,208
+			
+current_menu: .word 0,0,0
+menu_state: .word 0
+
 .text
+
+#li t1,0xFF200000
+#sw zero,0(t1)	
 
 li s0,0xFF200604
 li t0, 1
 sw t0,0(s0)
 
-li s1,0xFF100000
+li s1,0xFF000000
 
+
+Loop: 
 
 la a0, battleBG		# Load map
-image(a0, 0, 0)		#
+image(a0, 0, 0, 0)		#
 
 la a0, battleText	# Load map
-image(a0, 0, 168)	#
+image(a0, 0, 168, 0)	#
 
 la a0, battleEnemy	# Load map
-image(a0, 17, 25)
+image(a0, 17, 25, 0)
 
 la a0, battlePlayer	# Load map
-image(a0, 168, 113)
+image(a0, 168, 113, 0)
 
 la t0,dialogo
 li t1, 15
@@ -113,11 +136,7 @@ li t1, 23
 li t2, 32
 print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
 
-la a0, battleSelect	# Load map
-image(a0, 160, 168)	#
 
-la a0, attackSelec	# Load map
-image(a0, 0, 168)	#
 
 	#la a0, char		# pkmns
 	#la a0, bul
@@ -125,7 +144,7 @@ image(a0, 0, 168)	#
 	#la a0, rat
 	la a0, mac
 	li a5, 0
-	image(a0, 55, 114)		#
+	image(a0, 55, 114, 0)		#
 
 	#la a0, charFront	# pkmns
 	la a0, bulFront
@@ -133,46 +152,151 @@ image(a0, 0, 168)	#
 	#la a0, ratFront
 	#la a0, macFront
 	li a5, 0
-	image(a0, 211, 47)	#
+	image(a0, 211, 47, 0)	#
 
 
-la t0, attack1
-li t1, 20
-li t2, 188
-print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+jal key
 
-la t0, attack2
-li t1, 20
-li t2, 208
-print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+####### menu state
+li t0, 27
+la t1, menu_state
+bne a0, t0, not_back
+sw zero, 0(t1)
+not_back:
 
-la t0,fight
-li t1, 190
-li t2, 188
-print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+la t3, current_menu
+lw t2, 0(t1)
 
-la t0,fight
-li t1, 255
-li t2, 188
-print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
-
-la t0,fight
-li t1, 190
-li t2, 208
-print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
-
-la t0,fight
-li t1, 255
-li t2, 208
-print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+bne t2,zero,end_select
+li t0, 10
+bne a0, t0, end_select
+lw t0, 0(t3)
+sw t0, 0(t1)
 
 
-li a0, 0x77 # color
+end_select:
+#######
+
+
+la t1, menu_state
+lw t0,0(t1)
+li t1, 1
+beq t0, t1, battle_state
+li t1, 2
+beq t0, t1, pkmn_state
+li t1, 3
+beq t0, t1, bag_state
+
+	addi sp,sp, -4
+	sw a0,0(sp)
+
+	la a0, battleSelect	# Load map
+	image(a0, 160, 168, 0)	#
+
+	lw a0,0(sp)
+	addi sp,sp, 4
+
+	la a1, menu_position
+	la a2, lines_columns_select
+	la a3, states_positions_select
+	la a4, current_menu
+	jal menu
+
+	lw a1, 4 (a0)
+	lw a2, 8 (a0)
+	li a0, 42	# eh relativa a cada jogada
+	li a3, 0xc700	#
+	srli t0, s1, 20
+	andi a4, t0, 1 	#
+	li a7, 111	#
+	ecall 
+
+	la t0,fight
+	li t1, 190
+	li t2, 188
+	print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+
+	la t0,run
+	li t1, 255
+	li t2, 188
+	print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+
+	la t0,pkmn
+	li t1, 190
+	li t2, 208
+	print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+
+	la t0,bag
+	li t1, 255
+	li t2, 208
+	print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+j end_state
+
+battle_state:
+
+	addi sp,sp, -4
+	sw a0,0(sp)
+
+	la a0, attackSelec	# Load map
+	image(a0, 0, 168, 0)	#
+
+	lw a0,0(sp)
+	addi sp,sp, 4
+
+	la a1, menu_position
+	la a2, lines_columns_battle
+	la a3, states_positions_battle
+	la a4, current_menu
+	jal menu
+	
+	lw a1, 4 (a0)
+	lw a2, 8 (a0)
+	li a0, 42	# eh relativa a cada jogada
+	li a3, 0xc700	#
+	srli t0, s1, 20
+	andi a4, t0, 1 	#
+	li a7, 111	#
+	ecall 
+
+	la t0, attack1
+	li t1, 20
+	li t2, 188
+	print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+
+	la t0, attack2
+	li t1, 20
+	li t2, 208
+	print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+j end_state
+
+pkmn_state:
+	la a0, attackSelec	# Load map
+	image(a0, 0, 168, 0)	#
+	
+	la t0,pkmn
+	li t1, 20
+	li t2, 198
+	print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+
+j end_state
+bag_state:
+
+	la a0, attackSelec	# Load map
+	image(a0, 0, 168, 0)	#
+	
+	la t0,bag
+	li t1, 20
+	li t2, 198
+	print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+
+end_state:
+
+li a0, 0x07 # color
 li a1, 232   # x
 li a2, 138    # y
-li a3, 100
-li a4, 64
-li a5, 5
+li a3, 100  # percent
+li a4, 64   # total length
+li a5, 5   # thickness
 jal bar
 
 li a0, 0x77 # color
@@ -183,10 +307,81 @@ li a4, 64
 li a5, 5
 jal bar
 
-Loop: j Loop
+jal Frame_changer
+j Loop
 
 li a7,10
 ecall
+
+key:	li t1,0xFF200000		# 
+	lb t0,0(t1)			# 
+	andi t0,t0,0x0001		# Copiei do exemplo mesmo
+   	beq t0,zero,fim  	   	# pode denunciar
+  	lw a0,4(t1)  			# 
+	sw a0,12(t1)  			# 
+fim:	ret	
+
+menu:
+        li      t1,115
+        lw      a7,0(a1)
+        lw      a5,4(a1)
+        beq     a0,t1,M2
+        bgtu    a0,t1,M3
+        li      t1,97
+        beq     a0,t1,M4
+        li      t1,100
+        bne     a0,t1,M6
+        lw      a0,4(a2)
+        addi    a7,a7,1
+        rem     a7,a7,a0
+        sw      a7,0(a1)
+M6:
+        lw      a2,4(a2)
+        mv      a0,a4
+        mul     a5,a5,a2
+        add     a5,a5,a7
+        slli    a2,a5,1
+        add     a5,a2,a5
+        slli    a5,a5,2
+        add     a5,a3,a5
+        lw      a3,0(a5)
+        sw      a3,0(a4)
+        lw      a3,4(a5)
+        sw      a3,4(a4)
+        lw      a5,8(a5)
+        sw      a5,8(a4)
+        ret
+M3:
+        li      t1,119
+        bne     a0,t1,M6
+        lw      a0,0(a2)
+        add     a6,a0,a5
+        addi    a6,a6,-1
+        rem     a5,a6,a0
+        sw      a5,4(a1)
+        j       M6
+M2:
+        lw      a0,0(a2)
+        addi    a5,a5,1
+        rem     a5,a5,a0
+        sw      a5,4(a1)
+        j       M6
+M4:
+        lw      a0,4(a2)
+        add     a7,a0,a7
+        addi    a7,a7,-1
+        rem     a7,a7,a0
+        sw      a7,0(a1)
+        j       M6
+
+Frame_changer:
+	li t0,0x00100000
+	xor s1,s1,t0
+	li t0,0xFF200604
+	lw t1,0(t0)
+	xori t1,t1,0x01
+	sw t1,0(t0)
+	ret
 
 Image: 
 	# a5 = orientation (0  right, 1 left)
@@ -268,8 +463,11 @@ PrintDialog:
 	
 	li a7,111    # Print char
 	mv a3, a6   # Color
-	ori a4,s1,-2	 # Frame
-	neg a4,a4
+	
+	srai a4,s1,20
+	andi a4,a4,1
+	#ori a4,s1,-2	 # Frame
+	#neg a4,a4
 Loop_PD:	
 	beq t2,t4,End_PD
 Inner_Loop_PB:	
@@ -308,6 +506,9 @@ End_PD:
 
 	li a0,73
 	li a3,0xC7FF
+	
+	#srai a4,s1,20
+	#andi a4,a4,1
 	#li a4,0           #
 
 	li a7,111
