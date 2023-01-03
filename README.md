@@ -36,19 +36,21 @@ Divisão de atividades:
 Lab 3 (Entrega 18/1)
 -
 
-**A discutir**
+*) Lucas
 
 Lab 4 (Entrega 30/1)
 -
 
-**Ainda sem informações**
+*) Lucas
 
 Lab 5 (Entrega 8/2)
 -
 
-**Ainda sem informações**
+*) Lucas
 
 # Trabalho final -- 15/2
+
+*) Bruno e Lucas
 
 A fazer:
 * (0,5) história do jogo (com caixas de diálogo) ❎;
