@@ -10,10 +10,11 @@
 
 .end_macro
 
-.macro iterate_animation(%imageAddressRegis , %xLower , %yLower)
+.macro iterate_animation(%imageAddressRegis , %xLower , %yLower, %should_loop)
 	mv a0,%imageAddressRegis
 	li a1,%xLower
 	li a2,%yLower
+	mv a3,%should_loop
 	
 	jal ra,Animation_Iterator
 .end_macro
@@ -74,6 +75,7 @@ LOOP:
 	la a2,player_position
 	lw a1,0(a2)
 	lw a2,4(a2)
+	li a3,1
 	jal ra,Animation_Iterator
 	jal Frame_changer
 	
@@ -139,15 +141,22 @@ END_I:
 ########################## Animation Iterator
 
 Animation_Iterator:
-	# a0 = pointer to the animation section (pointer to the images), a1 = x, a2 = y
+	# a0 = pointer to the animation section (pointer to the images), a1 = x, a2 = y, a3 = should_loop
+	## toda animacao tem que terminar com x, 0
+	
+	addi sp, sp, -4
+	
+	sw a3,0(sp)
+	
+	
 	lw t0,0(a0) # endereco das imagens
 	
-	lw t1,0(t0)
-	lw t2,4(t0)
+	lw t1,0(t0) # maximo de largura
+	lw t2,4(t0) # maximo de altura
 	bne t1,t2,Dont_Restart_Loop
 	bne t1,zero,Dont_Restart_Loop
-	lw t0,8(a0)
-	sw t0,0(a0)
+	lw t0,8(a0) ## endereco atual igual ao inicial
+	sw t0,0(a0) ##
 
 Dont_Restart_Loop:
 
@@ -155,17 +164,25 @@ Dont_Restart_Loop:
 	sw a0,4(sp)
 	sw ra,0(sp)
 
-	lw a5,4(a0)
+	lw a5,4(a0) # pega orientacao de a0
 	mv a0,t0
-	jal ra,Image
+	jal ra,Image # chama Image
 	lw ra,0(sp)
 	lw a0,4(sp)
 	
 	addi sp,sp,8
 	
-	lw t0,0(a0)
-	lw t1,4(t0)
-	lw t2,0(t0)
+	
+	lw a3,0(sp)
+	addi sp, sp, 4
+	
+	bne a3, zero, Continue_AniIter
+	ret
+Continue_AniIter: 
+	
+	lw t0,0(a0)  #
+	lw t1,4(t0)  #
+	lw t2,0(t0)  # 
 	mul t1,t1,t2
 	li t3,4
 	rem t2,t1,t3
@@ -176,7 +193,7 @@ Correct_Val:
 	add t1,t1,t0
 	addi t1,t1,8
 	add t1,t1,t2
-	sw t1,0(a0)
+	sw t1,0(a0) # salva novo endereco
 	
 	ret
 	

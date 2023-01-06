@@ -124,17 +124,17 @@ image(a0, 168, 113, 0)
 la t0,dialogo
 li t1, 15
 li t2, 182
-print_dialog(t0, t1, t2, zero, 35, 5, 0xC7FF)
+print_dialog(t0, t1, t2, zero, 35, 5, 0x51FF)
 
 la t0,player_name
 li t1, 188
 li t2, 121
-print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+print_dialog(t0, t1, t2, zero, 35, 5, 0xff00)
 
 la t0,player_name
 li t1, 23
 li t2, 32
-print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+print_dialog(t0, t1, t2, zero, 35, 5, 0xff00)
 
 
 
@@ -205,7 +205,8 @@ beq t0, t1, bag_state
 	lw a1, 4 (a0)
 	lw a2, 8 (a0)
 	li a0, 42	# eh relativa a cada jogada
-	li a3, 0xc700	#
+	# li a3, 0xc700	#
+	li a3, 0xff00
 	srli t0, s1, 20
 	andi a4, t0, 1 	#
 	li a7, 111	#
@@ -252,7 +253,8 @@ battle_state:
 	lw a1, 4 (a0)
 	lw a2, 8 (a0)
 	li a0, 42	# eh relativa a cada jogada
-	li a3, 0xc700	#
+	# li a3, 0xc700	#
+	li a3, 0xff00
 	srli t0, s1, 20
 	andi a4, t0, 1 	#
 	li a7, 111	#
