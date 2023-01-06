@@ -1,4 +1,4 @@
-# .include "../MACROSv21.s"
+.include "../MACROSv21.s"
 .macro image(%imageAddressRegis , %xLower , %yLower)
 	#address is the address of the bitmap display
 
@@ -41,8 +41,29 @@ Dec:
 
 .include "mapaTeste.data"
 .include "walkFront.data"
+.include "pkmnSelect.data"
+
 imagem: .word 0,0,0
+
 player_position: .word 160, 120
+player_last_position: .word 0,0
+
+player_hitbox: .word 0,0,0,0
+pkmnsSelect: .word 14,
+1, 60,16,267,47
+1, 60,48,155,55
+1, 204,48,267,55
+1, 61,64,74,95
+1, 188,83,235,107
+1, 60,137,139,167
+1, 188,137,267,167
+1, 60,196,75,223
+1, 252,196,268,223
+2, 150,211,176,227
+1, 0,0,319,15
+1, 0,14,58,224
+1, 268,14,319,225
+1, 0,224,319,239
 
 .text
 
@@ -64,26 +85,116 @@ sw t0,4(a0)
 
 
 LOOP:	
-	li a5,0
-	la a0, mapaTeste	# Load map
-	image(a0, 0, 0)		#
+	####################  load map
+	li a5,0			
+	la a0, pkmnSelect
+	image(a0, 0, 0)	
 	
+	
+	#li a0, 0x00 # color
+	#li a1, 0   # x
+	#li a2, 0   # y
+	#li a3, 100
+	#li a4, 16
+	#li a5, 8
+	#jal bar
+	
+	################ update last player position
+	
+	la t0,player_position
+	lw t1,0(t0)
+	lw t2,4(t0)
+	sw t1,8(t0)
+	sw t2,12(t0)
+	
+	####################  input player
 	la a0,imagem
 	jal Input_Player
-
+	
+	####### change hitboxes
+	
+	la t0, player_position
+	lw t1,0(t0)
+	lw t2,4(t0)
+	
+	la t0, imagem
+	lw t0,0(t0)
+	lw t3,0(t0)
+	lw t4,4(t0)
+	
+	#li t3,14
+	#li t4,18
+	
+	add t3,t3,t1
+	add t4,t4,t2
+	addi t3,t3,-1
+	addi t4,t4,-1
+	
+	#addi t1,t1,14
+	#addi t2,t2,10
+	
+	la t0, player_hitbox
+	sw t1,0(t0)
+	sw t2,4(t0)
+	sw t3,8(t0)
+	sw t4,12(t0)
+	
+	
+	la a0,player_hitbox
+	la a1,pkmnsSelect
+	mv a2,s0
+	jal player_hitbox_interaction
+	
+	###################### print player
+	
 	la a0,imagem
 	la a2,player_position
 	lw a1,0(a2)
 	lw a2,4(a2)
-	li a3,1
+	li a3, 0   # sould loop
 	jal ra,Animation_Iterator
 	jal Frame_changer
+	
+	#######################
 	
 j LOOP
 
 
 li a7,10
 ecall
+
+#********************* por favor retirar depois do debug
+bar:
+        mul     a3,a3,a4
+        li      a6,100
+        div     a3,a3,a6
+        add     a6,a3,a1
+        bge     a1,a6,.L1
+        add     a5,a2,a5
+        bge     a2,a5,.L1
+        slli    a4,a5,2
+        add     a4,a4,a5
+        slli    a5,a2,2
+        mv      a7,s1
+        slli    a4,a4,6
+        add     a2,a5,a2
+        add     a4,a4,a7
+        slli    a2,a2,6
+        add     a4,a4,a1
+        andi    a3,a0,0xff
+        add     a2,a2,a7
+.L6:
+        add     a5,a2,a1
+.L4:
+        sb      a3,0(a5)
+        addi    a5,a5,320
+        bne     a4,a5,.L4
+        addi    a1,a1,1
+        addi    a4,a4,1
+        bne     a1,a6,.L6
+.L1:
+        ret
+
 
 ##################### IMAGE
 
@@ -234,7 +345,7 @@ Input_Player:
 	bne a0,t0,Next_Input1
 	li a2,1
 	#addi a3,a3,4
-	li a4,-16
+	li a4,-5 #*******
 	jal Move_Bat_Command
 	
 Next_Input1:
@@ -242,7 +353,7 @@ Next_Input1:
 	bne a0,t0,Next_Input2
 	li a2,0
 	#addi a3,a3,4
-	li a4,16
+	li a4,5 #*******
 	jal Move_Bat_Command
 	
 Next_Input2:
@@ -250,14 +361,14 @@ Next_Input2:
 	bne a0,t0,Next_Input3
 	li a2,-1
 	addi a3,a3,4
-	li a4,16
+	li a4,5 #*******
 	jal Move_Bat_Command
 	
 Next_Input3:
 	li t0,119 # w
 	li a2,-1
 	addi a3,a3,4
-	li a4,-16
+	li a4,-5 #*******
 	bne a0,t0,Next_Input4
 	jal Move_Bat_Command
 Next_Input4:	
@@ -304,4 +415,78 @@ Move_Bat_Foward:
 	
 	j End_IP
 
-# .include "../SYSTEMv21.s"
+######################### hitbox interactions
+
+player_hitbox_interaction:
+        lw      a6,0(a1)
+        addi    a1,a1,4
+        ble     a6,zero,PHI9
+        li      a5,0
+        li      a7,1
+PHI13:
+        lw      a4,12(a1)
+        lw      a3,0(a0)
+        bgt     a3,a4,PHI11
+        lw      a3,4(a1)
+        lw      a4,8(a0)
+        bgt     a3,a4,PHI11
+        lw      a4,8(a1)
+        lw      a3,12(a0)
+        blt     a3,a4,PHI11
+        lw      a3,16(a1)
+        lw      a4,4(a0)
+        blt     a3,a4,PHI11
+        lw      a4,0(a1)
+        bne     a4,a7,PHI12
+        lw      t1,12(a2)
+        lw      a3,8(a2)
+        sw      t1,4(a2)
+        sw      a3,0(a2)
+PHI12:
+        #addi sp,sp,16
+        #sw a0,0(sp)
+        #sw a1,4(sp)
+        #sw a2,8(sp)
+        #sw a3,12(sp)
+        #mv a0,a4
+        #li a1,0
+        #li a2,0
+        #li a3,0xff
+        #li a7,101
+        #ecall
+        #lw a0,0(sp)
+        #lw a1,4(sp)
+        #lw a2,8(sp)
+        #lw a3,12(sp)
+        #addi sp,sp,16
+PHI11:
+        addi    a5,a5,1
+        addi    a1,a1,20
+        bne     a6,a5,PHI13
+PHI9:
+        ret
+
+
+doOverlap:
+        lw      a3,0(a0)
+        lw      a4,8(a1)
+        mv      a5,a0
+        bgt     a3,a4,.L3
+        lw      a4,8(a0)
+        lw      a3,0(a1)
+        li      a0,0
+        bgt     a3,a4,.L2
+        lw      a3,12(a5)
+        lw      a4,4(a1)
+        blt     a3,a4,.L2
+        lw      a0,12(a1)
+        lw      a5,4(a5)
+        slt     a0,a0,a5
+        xori    a0,a0,1
+        ret
+.L3:
+        li      a0,0
+.L2:
+        ret
+
+.include "../SYSTEMv21.s"
