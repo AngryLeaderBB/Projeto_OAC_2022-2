@@ -1,4 +1,4 @@
-#.include "../MACROSv21.s"
+.include "../MACROSv21.s"
 .macro image(%imageAddressRegis , %xLower , %yLower)
 	#address is the address of the bitmap display
 
@@ -42,11 +42,14 @@ Dec:
 .include "mapaTeste.data"
 .include "walkFront.data"
 .include "pkmnSelect.data"
+CONST_FLOAT: .float 10
 
 imagem: .word 0,0,0
-
+player_real_position: .float 160, 120
 player_position: .word 160, 120
 player_last_position: .word 0,0
+
+animation_state: .word 0
 
 player_hitbox: .word 0,0,0,0
 pkmnsSelect: .word 14,
@@ -85,6 +88,11 @@ sw t0,4(a0)
 
 
 LOOP:	
+	li a7,30	# saves global time
+	ecall
+	mv s3,a0
+
+
 	####################  load map
 	li a5,0			
 	la a0, pkmnSelect
@@ -143,6 +151,7 @@ LOOP:
 	la a0,player_hitbox
 	la a1,pkmnsSelect
 	mv a2,s0
+	addi a3,s0,-8
 	jal player_hitbox_interaction
 	
 	###################### print player
@@ -151,7 +160,9 @@ LOOP:
 	la a2,player_position
 	lw a1,0(a2)
 	lw a2,4(a2)
-	li a3, 0   # sould loop
+	
+	la t0, animation_state
+	lw a3, 0(t0)   # sould loop
 	jal ra,Animation_Iterator
 	jal Frame_changer
 	
@@ -333,7 +344,21 @@ FIM:	ret
 
 Input_Player:
 	# a0 = player animation
-	mv a1,a0 
+	
+	########## ft0 = delta time
+	mv a2,a0
+	
+	li a7,30
+	ecall
+	sub t0,a0,s3
+	la t1, CONST_FLOAT
+	fcvt.s.w ft0,t0
+       	flw     ft1,0(t1)
+       	fdiv.s  ft0,ft0,ft1
+
+	mv a0,a2
+	mv a1,a2
+	##########
 	
 	addi sp,sp,-4
 	sw ra,0(sp)
@@ -345,7 +370,12 @@ Input_Player:
 	bne a0,t0,Next_Input1
 	li a2,1
 	#addi a3,a3,4
-	li a4,-5 #*******
+	li a4,-7 #*******
+	
+	fcvt.s.w ft1,a4		#
+	fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
+	#fcvt.w.s a4,ft0		#
+	
 	jal Move_Bat_Command
 	
 Next_Input1:
@@ -353,7 +383,12 @@ Next_Input1:
 	bne a0,t0,Next_Input2
 	li a2,0
 	#addi a3,a3,4
-	li a4,5 #*******
+	li a4,7 #*******
+	
+	fcvt.s.w ft1,a4		#
+	fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
+	#fcvt.w.s a4,ft0		#
+	
 	jal Move_Bat_Command
 	
 Next_Input2:
@@ -361,19 +396,37 @@ Next_Input2:
 	bne a0,t0,Next_Input3
 	li a2,-1
 	addi a3,a3,4
-	li a4,5 #*******
+	li a4,7 #*******
+	
+	fcvt.s.w ft1,a4		#
+	fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
+	#fcvt.w.s a4,ft0		#
+	
 	jal Move_Bat_Command
 	
 Next_Input3:
 	li t0,119 # w
 	li a2,-1
 	addi a3,a3,4
-	li a4,-5 #*******
+	li a4,-7 #*******
+	
+	fcvt.s.w ft1,a4		#
+	fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
+	#fcvt.w.s a4,ft0		#
+	
 	bne a0,t0,Next_Input4
 	jal Move_Bat_Command
-Next_Input4:	
-	jal End_IP
-Move_Bat_Command:	
+Next_Input4:
+	la t0, animation_state	# should loop = false
+	sw zero,0(t0)		#
+		
+	j End_IP
+Move_Bat_Command:
+
+	la t0, animation_state	#
+	li t1,1			# should loop = true
+	sw t1,0(t0)		#
+		
 	jal Move_Bat
 
 End_IP:
@@ -387,127 +440,179 @@ End_IP:
 Move_Bat:
 	li t0,-1
 	beq a2,t0,Same_Direction
-	sw a2,4(a1)
+	sw a2,4(a1) # change direction
 Same_Direction:
-	lw t0,0(a3)
-	add t0,t0,a4
+
+	#flw fa0,0(t0)
+	#li a7,2
+	#ecall
+	
+	#fmv.s fa0,ft0
+	#li a7,102
+	#ecall
+	
+	flw ft1,-8(a3)
+	fadd.s ft1,ft1,ft0
+	fsw ft1,-8(a3)
+	#fmv.s fa0,ft1
+	#li a7,2
+	#ecall
+	
+	fcvt.w.s t0,ft1
 	sw t0,0(a3)
-
-	jal End_IP
-
-Move_Bat_Backward:
-	li t0,1
-	sw t0,4(a1)
-
-	la t0,player_position
-	lw t1,0(t0)
-	addi t1,t1,-8
-	sw t1,0(t0)
 	
-	j End_IP
-
-Move_Bat_Foward:
-	sw zero,4(a1)
-	la t0,player_position
-	lw t1,0(t0)
-	addi t1,t1,8
-	sw t1,0(t0)
+	ret
 	
-	j End_IP
+#Move_Bat_Backward:
+#	li t0,1
+#	sw t0,4(a1)
+#
+#	la t0,player_position
+#	lw t1,0(t0)
+#	addi t1,t1,-8
+#	sw t1,0(t0)
+#	
+#	ret
+#
+#Move_Bat_Foward:
+#	sw zero,4(a1)
+#	la t0,player_position
+#	lw t1,0(t0)
+#	addi t1,t1,8
+#	sw t1,0(t0)
+#	
+#	ret
 
 ######################### hitbox interactions
 
+new_position:
+        lw      a5,4(a2)
+        lw      a4,12(a2)
+        sub     a6,a5,a4
+        beq     a5,a4,PHI15
+        flw     fa5,4(a3)
+        bgt     a6,zero,PHI16
+        lw      a4,4(a0)
+        lw      a6,12(a1)
+        sub     a4,a4,a6
+        addi    a4,a4,-1
+        sub     a5,a5,a4
+        sw      a5,4(a2)
+        lw      a5,4(a0)
+        lw      a4,12(a1)
+        sub     a5,a5,a4
+        addi    a5,a5,-1
+        fcvt.s.w        fa4,a5
+        fsub.s  fa5,fa5,fa4
+        fsw     fa5,4(a3)
+PHI7:
+        ret
+PHI16:
+        lw      a4,12(a0)
+        lw      a6,4(a1)
+        sub     a4,a4,a6
+        addi    a4,a4,1
+        sub     a5,a5,a4
+        sw      a5,4(a2)
+        lw      a5,12(a0)
+        lw      a4,4(a1)
+        sub     a5,a5,a4
+        addi    a5,a5,1
+        fcvt.s.w        fa4,a5
+        fsub.s  fa5,fa5,fa4
+        fsw     fa5,4(a3)
+        ret
+PHI15:
+        lw      a4,0(a2)
+        lw      a5,8(a2)
+        sub     a5,a4,a5
+        ble     a5,zero,PHI9
+        lw      a5,8(a0)
+        lw      a6,0(a1)
+        flw     fa5,0(a3)
+        sub     a5,a5,a6
+        addi    a5,a5,1
+        sub     a4,a4,a5
+        sw      a4,0(a2)
+        lw      a5,8(a0)
+        lw      a4,0(a1)
+        sub     a5,a5,a4
+        addi    a5,a5,1
+        fcvt.s.w        fa4,a5
+        fsub.s  fa5,fa5,fa4
+        fsw     fa5,0(a3)
+        ret
+PHI9:
+        beq     a5,zero,PHI7
+        lw      a5,0(a0)
+        lw      a6,8(a1)
+        flw     fa5,0(a3)
+        sub     a5,a5,a6
+        addi    a5,a5,-1
+        sub     a4,a4,a5
+        sw      a4,0(a2)
+        lw      a5,0(a0)
+        lw      a4,8(a1)
+        sub     a5,a5,a4
+        addi    a5,a5,-1
+        fcvt.s.w        fa4,a5
+        fsub.s  fa5,fa5,fa4
+        fsw     fa5,0(a3)
+        ret
 player_hitbox_interaction:
-        lw      t5,0(a1)
-        ble     t5,zero,PHI29
-        addi    a1,a1,4
-        li      a5,0
-        li      t2,1
-PHI30:
-        lw      a4,0(a0)
-        lw      a3,12(a1)
-        bgt     a4,a3,PHI31
-        lw      a7,4(a1)
-        lw      a6,8(a0)
-        bgt     a7,a6,PHI31
-        lw      t1,12(a0)
-        lw      t3,8(a1)
-        blt     t1,t3,PHI31
-        lw      t6,16(a1)
-        lw      t4,4(a0)
-        blt     t6,t4,PHI31
-        lw      t0,0(a1)
-        beq     t0,t2,PHI37
-PHI31:
-        addi    a5,a5,1
-        addi    a1,a1,20
-        bne     t5,a5,PHI30
-        ret
-PHI29:
-        ret
-PHI37:
-        addi    sp,sp,-16
-        sw      s0,12(sp)
-        sw      s1,8(sp)
-PHI36:
-        lw      t0,4(a2)
-        lw      s0,12(a2)
-        sub     s1,t0,s0
-        beq     t0,s0,PHI39
-        bgt     s1,zero,PHI40
-        sub     a4,t4,t6
-        addi    a4,a4,-1
-        sub     a4,t0,a4
-        sw      a4,4(a2)
+        addi    sp,sp,-32
+        sw      s3,12(sp)
+        lw      s3,0(a1)
+        sw      ra,28(sp)
+        sw      s0,24(sp)
+        sw      s1,20(sp)
+        sw      s2,16(sp)
+        sw      s4,8(sp)
+        sw      s5,4(sp)
+        sw      s6,0(sp)
+        ble     s3,zero,PHI17
+        mv      s2,a0
+        mv      s5,a2
+        mv      s6,a3
+        addi    s0,a1,8
+        li      s1,0
+        li      s4,1
+PHI20:
+        lw      a5,8(s0)
+        lw      a4,0(s2)
+        addi    s1,s1,1
+        bgt     a4,a5,PHI19
+        lw      a4,0(s0)
+        lw      a5,8(s2)
+        bgt     a4,a5,PHI19
+        lw      a5,4(s0)
+        lw      a4,12(s2)
+        blt     a4,a5,PHI19
+        lw      a4,12(s0)
+        lw      a5,4(s2)
+        blt     a4,a5,PHI19
+        lw      a5,-4(s0)
+        beq     a5,s4,PHI23
 PHI19:
-        addi    a5,a5,1
-        addi    a1,a1,20
-        beq     t5,a5,PHI41
-PHI23:
-        lw      a4,0(a0)
-        lw      a3,12(a1)
-        bgt     a4,a3,PHI19
-        lw      a7,4(a1)
-        lw      a6,8(a0)
-        bgt     a7,a6,PHI19
-        lw      t1,12(a0)
-        lw      t3,8(a1)
-        blt     t1,t3,PHI19
-        lw      t6,16(a1)
-        lw      t4,4(a0)
-        blt     t6,t4,PHI19
-        lw      t0,0(a1)
-        beq     t0,t2,PHI36
-        addi    a5,a5,1
-        addi    a1,a1,20
-        bne     t5,a5,PHI23
-PHI41:
-        lw      s0,12(sp)
-        lw      s1,8(sp)
-        addi    sp,sp,16
+        addi    s0,s0,20
+        bne     s3,s1,PHI20
+PHI17:
+        lw      ra,28(sp)
+        lw      s0,24(sp)
+        lw      s1,20(sp)
+        lw      s2,16(sp)
+        lw      s3,12(sp)
+        lw      s4,8(sp)
+        lw      s5,4(sp)
+        lw      s6,0(sp)
+        addi    sp,sp,32
         jr      ra
-PHI40:
-        sub     a4,t1,t3
-        addi    a4,a4,1
-        sub     a4,t0,a4
-        sw      a4,4(a2)
-        j       PHI19
-PHI39:
-        lw      t3,0(a2)
-        lw      t1,8(a2)
-        sub     t1,t3,t1
-        ble     t1,zero,PHI21
-        sub     a4,a6,a7
-        addi    a4,a4,1
-        sub     a4,t3,a4
-        sw      a4,0(a2)
-        j       PHI19
-PHI21:
-        beq     t1,zero,PHI19
-        sub     a4,a4,a3
-        addi    a4,a4,-1
-        sub     a4,t3,a4
-        sw      a4,0(a2)
+PHI23:
+        mv      a1,s0
+        mv      a3,s6
+        mv      a2,s5
+        mv      a0,s2
+        call    new_position
         j       PHI19
 
 
@@ -533,4 +638,4 @@ doOverlap:
 .L2:
         ret
 
-#.include "../SYSTEMv21.s"
+.include "../SYSTEMv21.s"
