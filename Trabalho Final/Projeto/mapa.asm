@@ -1,4 +1,4 @@
-.include "../MACROSv21.s"
+#.include "../MACROSv21.s"
 .macro image(%imageAddressRegis , %xLower , %yLower)
 	#address is the address of the bitmap display
 
@@ -131,7 +131,7 @@ LOOP:
 	addi t4,t4,-1
 	
 	#addi t1,t1,14
-	#addi t2,t2,10
+	addi t2,t2,12
 	
 	la t0, player_hitbox
 	sw t1,0(t0)
@@ -418,53 +418,97 @@ Move_Bat_Foward:
 ######################### hitbox interactions
 
 player_hitbox_interaction:
-        lw      a6,0(a1)
+        lw      t5,0(a1)
+        ble     t5,zero,PHI29
         addi    a1,a1,4
-        ble     a6,zero,PHI9
         li      a5,0
-        li      a7,1
-PHI13:
-        lw      a4,12(a1)
-        lw      a3,0(a0)
-        bgt     a3,a4,PHI11
-        lw      a3,4(a1)
-        lw      a4,8(a0)
-        bgt     a3,a4,PHI11
-        lw      a4,8(a1)
-        lw      a3,12(a0)
-        blt     a3,a4,PHI11
-        lw      a3,16(a1)
-        lw      a4,4(a0)
-        blt     a3,a4,PHI11
-        lw      a4,0(a1)
-        bne     a4,a7,PHI12
-        lw      t1,12(a2)
-        lw      a3,8(a2)
-        sw      t1,4(a2)
-        sw      a3,0(a2)
-PHI12:
-        #addi sp,sp,16
-        #sw a0,0(sp)
-        #sw a1,4(sp)
-        #sw a2,8(sp)
-        #sw a3,12(sp)
-        #mv a0,a4
-        #li a1,0
-        #li a2,0
-        #li a3,0xff
-        #li a7,101
-        #ecall
-        #lw a0,0(sp)
-        #lw a1,4(sp)
-        #lw a2,8(sp)
-        #lw a3,12(sp)
-        #addi sp,sp,16
-PHI11:
+        li      t2,1
+PHI30:
+        lw      a4,0(a0)
+        lw      a3,12(a1)
+        bgt     a4,a3,PHI31
+        lw      a7,4(a1)
+        lw      a6,8(a0)
+        bgt     a7,a6,PHI31
+        lw      t1,12(a0)
+        lw      t3,8(a1)
+        blt     t1,t3,PHI31
+        lw      t6,16(a1)
+        lw      t4,4(a0)
+        blt     t6,t4,PHI31
+        lw      t0,0(a1)
+        beq     t0,t2,PHI37
+PHI31:
         addi    a5,a5,1
         addi    a1,a1,20
-        bne     a6,a5,PHI13
-PHI9:
+        bne     t5,a5,PHI30
         ret
+PHI29:
+        ret
+PHI37:
+        addi    sp,sp,-16
+        sw      s0,12(sp)
+        sw      s1,8(sp)
+PHI36:
+        lw      t0,4(a2)
+        lw      s0,12(a2)
+        sub     s1,t0,s0
+        beq     t0,s0,PHI39
+        bgt     s1,zero,PHI40
+        sub     a4,t4,t6
+        addi    a4,a4,-1
+        sub     a4,t0,a4
+        sw      a4,4(a2)
+PHI19:
+        addi    a5,a5,1
+        addi    a1,a1,20
+        beq     t5,a5,PHI41
+PHI23:
+        lw      a4,0(a0)
+        lw      a3,12(a1)
+        bgt     a4,a3,PHI19
+        lw      a7,4(a1)
+        lw      a6,8(a0)
+        bgt     a7,a6,PHI19
+        lw      t1,12(a0)
+        lw      t3,8(a1)
+        blt     t1,t3,PHI19
+        lw      t6,16(a1)
+        lw      t4,4(a0)
+        blt     t6,t4,PHI19
+        lw      t0,0(a1)
+        beq     t0,t2,PHI36
+        addi    a5,a5,1
+        addi    a1,a1,20
+        bne     t5,a5,PHI23
+PHI41:
+        lw      s0,12(sp)
+        lw      s1,8(sp)
+        addi    sp,sp,16
+        jr      ra
+PHI40:
+        sub     a4,t1,t3
+        addi    a4,a4,1
+        sub     a4,t0,a4
+        sw      a4,4(a2)
+        j       PHI19
+PHI39:
+        lw      t3,0(a2)
+        lw      t1,8(a2)
+        sub     t1,t3,t1
+        ble     t1,zero,PHI21
+        sub     a4,a6,a7
+        addi    a4,a4,1
+        sub     a4,t3,a4
+        sw      a4,0(a2)
+        j       PHI19
+PHI21:
+        beq     t1,zero,PHI19
+        sub     a4,a4,a3
+        addi    a4,a4,-1
+        sub     a4,t3,a4
+        sw      a4,0(a2)
+        j       PHI19
 
 
 doOverlap:
@@ -489,4 +533,4 @@ doOverlap:
 .L2:
         ret
 
-.include "../SYSTEMv21.s"
+#.include "../SYSTEMv21.s"
