@@ -40,7 +40,7 @@ Dec:
 .data
 
 .include "mapaTeste.data"
-.include "walkFront.data"
+.include "walk.data"
 .include "pkmnSelect.data"
 CONST_FLOAT: .float 10
 
@@ -49,7 +49,7 @@ player_real_position: .float 160, 120
 player_position: .word 160, 120
 player_last_position: .word 0,0
 
-animation_state: .word 0
+animation_state: .word 0,0
 
 player_hitbox: .word 0,0,0,0
 pkmnsSelect: .word 14,
@@ -77,6 +77,7 @@ la s2,imagem		# Constants
 
 
 la t0,walkFront0
+#la t0,walkBack0
 la a0,imagem
 sw t0,0(a0)
 sw t0,8(a0)
@@ -109,11 +110,11 @@ LOOP:
 	
 	################ update last player position
 	
-	la t0,player_position
-	lw t1,0(t0)
-	lw t2,4(t0)
-	sw t1,8(t0)
-	sw t2,12(t0)
+	#la t0,player_position
+	lw t1,0(s0)
+	lw t2,4(s0)
+	sw t1,8(s0)
+	sw t2,12(s0)
 	
 	####################  input player
 	la a0,imagem
@@ -368,12 +369,13 @@ Input_Player:
 	
 	li t0,97 # a
 	bne a0,t0,Next_Input1
+	la t2,walkSide0
 	li a2,1
 	#addi a3,a3,4
 	li a4,-7 #*******
 	
-	fcvt.s.w ft1,a4		#
-	fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
+	#fcvt.s.w ft1,a4		#
+	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
 	#fcvt.w.s a4,ft0		#
 	
 	jal Move_Bat_Command
@@ -381,12 +383,13 @@ Input_Player:
 Next_Input1:
 	li t0,100 # d
 	bne a0,t0,Next_Input2
+	la t2,walkSide0
 	li a2,0
 	#addi a3,a3,4
 	li a4,7 #*******
 	
-	fcvt.s.w ft1,a4		#
-	fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
+	#fcvt.s.w ft1,a4		#
+	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
 	#fcvt.w.s a4,ft0		#
 	
 	jal Move_Bat_Command
@@ -394,24 +397,26 @@ Next_Input1:
 Next_Input2:
 	li t0,115 # s 
 	bne a0,t0,Next_Input3
-	li a2,-1
+	la t2,walkFront0
+	li a2,1
 	addi a3,a3,4
 	li a4,7 #*******
 	
-	fcvt.s.w ft1,a4		#
-	fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
+	#fcvt.s.w ft1,a4		#
+	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
 	#fcvt.w.s a4,ft0		#
 	
 	jal Move_Bat_Command
 	
 Next_Input3:
 	li t0,119 # w
-	li a2,-1
+	la t2,walkBack0
+	li a2,0
 	addi a3,a3,4
 	li a4,-7 #*******
 	
-	fcvt.s.w ft1,a4		#
-	fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
+	#fcvt.s.w ft1,a4		#
+	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
 	#fcvt.w.s a4,ft0		#
 	
 	bne a0,t0,Next_Input4
@@ -423,10 +428,13 @@ Next_Input4:
 	j End_IP
 Move_Bat_Command:
 
-	la t0, animation_state	#
+	la t3, animation_state	#
 	li t1,1			# should loop = true
-	sw t1,0(t0)		#
-		
+	sw t1,0(t3)
+	lw t1,4(t3)		#
+	sw t0,4(t3)
+	sub t0,t0,t1
+	
 	jal Move_Bat
 
 End_IP:
@@ -438,9 +446,16 @@ End_IP:
 ##################### player movement
 
 Move_Bat:
-	li t0,-1
-	beq a2,t0,Same_Direction
+	
+	fcvt.s.w ft1,a4		#
+	fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
+	sw t2,8(a1)
+	
+	beq zero,t0,Same_Direction
+	sw t2,0(a1)
 	sw a2,4(a1) # change direction
+	
+	#sw a2,4(a1) # change direction
 Same_Direction:
 
 	#flw fa0,0(t0)

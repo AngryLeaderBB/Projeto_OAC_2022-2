@@ -62,6 +62,7 @@ Dec:
 .include "bomb-idle_42x82.data"
 # .include "minos_idle.data"
 .include "walkFront.data"
+#.include "walkBack.data"
 .include "bat-fly_20x48.data"
 
 imagem: .word 0,0,0
@@ -73,6 +74,7 @@ imagem: .word 0,0,0
 	sw zero,0(s0)
 	
 	la t0,walkFront0
+	#la t0,walkBack0
 	la a0,imagem
 	sw t0,0(a0)
 	sw t0,8(a0)
