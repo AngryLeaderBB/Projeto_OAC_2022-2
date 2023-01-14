@@ -158,10 +158,39 @@ void player_hitbox_interaction(int *player_hb, int *hitbox_section,
 
         did_collide = doOverlap(player_hb, hitbox_section);
 
+        if (interaction_type == 2){
+            hitbox_section += 4;
+        }
+
         if (did_collide){
-            if (interaction_type == 1){
-                new_position(player_hb, hitbox_section, position, real_position);
+
+            switch(interaction_type){
+                case 1:
+                    new_position(player_hb, hitbox_section, position, real_position);
+                    break;
+
+                case 2:
+                    int new_bg = *(hitbox_section), new_hb = *(hitbox_section+1),
+                        new_x = *(hitbox_section+2), new_y = *(hitbox_section+3);
+
+                    new_y -= position[1];
+
+                    position[1] += new_y;
+
+                    real_position[1] += (float)new_y;
+
+                    if (new_x != 0){
+                        new_x -= position[0];
+                        position[0] += new_x;
+                        real_position[0] += (float)new_x;
+                    }
+
+                    asm("sw %0,24(sp)\n\tsw %1,20(sp)" :: "r" (new_bg), "r" (new_hb));
+                
+                    break;
+
             }
+
             /*asm ("addi sp,sp,-4\n\tsw a0,0(sp)\n\t"
                  "mv a0,%0 \n\tli a7, 1\n\tecall\n\t"
                  "lw a0,0(sp)\n\taddi sp,sp,4" :: "r" (interaction_type));
@@ -179,7 +208,6 @@ void player_hitbox_interaction(int *player_hb, int *hitbox_section,
     }
 
 }
-
 
 /////////////////// print char
 

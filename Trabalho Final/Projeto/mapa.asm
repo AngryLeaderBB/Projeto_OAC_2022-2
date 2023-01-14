@@ -41,12 +41,17 @@ Dec:
 
 .include "mapaTeste.data"
 .include "walk.data"
-.include "pkmnSelect.data"
+#.include "pkmnSelect.data"
+#.include "stadium.data"
+#.include "open1.data"
+#.include "open2.data"
+.include "stages.data"
+
 CONST_FLOAT: .float 10
 
 imagem: .word 0,0,0
-player_real_position: .float 160, 120
-player_position: .word 160, 120
+player_real_position: .float 160, 130
+player_position: .word 160, 130
 player_last_position: .word 0,0
 
 animation_state: .word 0,0
@@ -63,18 +68,127 @@ pkmnsSelect: .word 14,
 1, 60,196,75,223
 1, 252,196,268,223
 2, 150,211,176,227
+exit_pk_select: .word 0,0, 0,200
 1, 0,0,319,15
 1, 0,14,58,224
 1, 268,14,319,225
 1, 0,224,319,239
+
+stadium_hb: .word 21,
+1, 72,0,247,24
+1, 56,0,71,239
+1, 248,0,263,239
+1, 104,32,135,65
+1, 136,32,215,52
+1, 232,48,247,69
+1, 72,48,87,69
+1, 200,53,215,82
+1, 104,81,119,111
+1, 104,112,135,149
+1, 184,112,215,149
+1, 200,99,215,111
+1, 72,160,87,181
+1, 232,144,247,165
+1, 87,199,103,230
+1, 104,192,135,229
+1, 184,192,215,229
+1, 216,199,232,230
+1, 136,112,150,132
+1, 168,112,183,132
+2, 147,228,172,239, 
+exit_stadium: .word 0,0, 180,50
+
+open1_hb: .word 13,
+1, 0,0,10,198
+3, 11,0,75,84
+2, 0,0,319,10, 
+open1_up: .word 0,0, 0,200
+3, 124,0,267,20
+3, 76,69,220,84
+3, 268,0,300,198
+4, 15,89,215,146
+3, 11,148,60,198
+1, 0,199,138,239
+3, 188,197,219,239
+1, 301,0,319,198
+1, 220,199,319,239
+2, 0,229,319,239, 
+open1_down: .word 0,0, 0,185
+
+open2_hb: .word 22,
+1, 0,0,10,239
+1, 11,0,139,33
+1, 140,0,162,52
+1, 163,0,211,44
+1, 212,0,235,52
+1, 236,0,299,34
+1, 300,0,319,239
+2, 163,45,211,60, 
+open2_up: .word 0,0, 155,200
+1, 132,34,139,65
+1, 236,35,243,65
+3, 11,195,75,239
+3, 124,197,219,239
+3, 220,213,299,239
+2, 0,231,319,239,
+open2_down: .word 0,0, 0,20
+1, 11,77,59,84
+1, 76,77,139,84
+1, 219,77,251,84
+1, 268,77,299,84
+1, 11,141,123,148
+1, 140,141,235,149
+1, 236,117,299,180
+1, 284,196,299,212
 
 .text
 
 la s0,player_position	#
 li s1,0xFF100000	# Initialize 
 la s2,imagem		# Constants
+## s3 time
+la s4,pkmnSelect
+la s5,pkmnsSelect
 
+##### conecting maps
 
+la t0,exit_stadium
+la t1,open2
+la t2,open2_hb
+sw t1,0(t0)
+sw t2,4(t0)
+
+la t0,exit_pk_select
+la t1,open1
+la t2,open1_hb
+sw t1,0(t0)
+sw t2,4(t0)
+
+la t0,open1_up
+la t1,open2
+la t2,open2_hb
+sw t1,0(t0)
+sw t2,4(t0)
+
+la t0,open1_down
+la t1,pkmnSelect
+la t2,pkmnsSelect
+sw t1,0(t0)
+sw t2,4(t0)
+
+la t0,open2_up
+la t1,stadium
+la t2,stadium_hb
+sw t1,0(t0)
+sw t2,4(t0)
+
+la t0,open2_down
+la t1,open1
+la t2,open1_hb
+sw t1,0(t0)
+sw t2,4(t0)
+
+######
 
 la t0,walkFront0
 #la t0,walkBack0
@@ -96,7 +210,8 @@ LOOP:
 
 	####################  load map
 	li a5,0			
-	la a0, pkmnSelect
+	#la a0, pkmnSelect
+	mv a0,s4
 	image(a0, 0, 0)	
 	
 	
@@ -150,7 +265,8 @@ LOOP:
 	
 	
 	la a0,player_hitbox
-	la a1,pkmnsSelect
+	#la a1,pkmnsSelect
+	mv a1,s5
 	mv a2,s0
 	addi a3,s0,-8
 	jal player_hitbox_interaction
@@ -574,61 +690,98 @@ PHI9:
         fsub.s  fa5,fa5,fa4
         fsw     fa5,0(a3)
         ret
+        
 player_hitbox_interaction:
-        addi    sp,sp,-32
-        sw      s3,12(sp)
+        addi    sp,sp,-48
+        sw      s3,28(sp)
         lw      s3,0(a1)
-        sw      ra,28(sp)
-        sw      s0,24(sp)
-        sw      s1,20(sp)
-        sw      s2,16(sp)
-        sw      s4,8(sp)
-        sw      s5,4(sp)
-        sw      s6,0(sp)
-        ble     s3,zero,PHI17
-        mv      s2,a0
+        sw      ra,44(sp)
+        sw      s0,40(sp)
+        sw      s1,36(sp)
+        sw      s2,32(sp)
+        sw      s4,24(sp)
+        sw      s5,20(sp)
+        sw      s6,16(sp)
+        sw      s7,12(sp)
+        ble     s3,zero,PH17
+        mv      s1,a0
         mv      s5,a2
         mv      s6,a3
-        addi    s0,a1,8
-        li      s1,0
-        li      s4,1
-PHI20:
-        lw      a5,8(s0)
-        lw      a4,0(s2)
-        addi    s1,s1,1
-        bgt     a4,a5,PHI19
-        lw      a4,0(s0)
-        lw      a5,8(s2)
-        bgt     a4,a5,PHI19
-        lw      a5,4(s0)
-        lw      a4,12(s2)
-        blt     a4,a5,PHI19
-        lw      a4,12(s0)
-        lw      a5,4(s2)
-        blt     a4,a5,PHI19
-        lw      a5,-4(s0)
-        beq     a5,s4,PHI23
-PHI19:
-        addi    s0,s0,20
-        bne     s3,s1,PHI20
-PHI17:
-        lw      ra,28(sp)
-        lw      s0,24(sp)
-        lw      s1,20(sp)
-        lw      s2,16(sp)
-        lw      s3,12(sp)
-        lw      s4,8(sp)
-        lw      s5,4(sp)
-        lw      s6,0(sp)
-        addi    sp,sp,32
-        jr      ra
-PHI23:
-        mv      a1,s0
+        addi    a5,a1,4
+        li      s0,0
+        li      s4,2
+        li      s7,1
+        j       PH24
+PH34:
+        lw      a0,4(a5)
+        lw      a1,8(s1)
+        bgt     a0,a1,PH19
+        lw      a2,12(s1)
+        lw      a3,8(a5)
+        blt     a2,a3,PH19
+        lw      a2,16(a5)
+        lw      a3,4(s1)
+        blt     a2,a3,PH19
+        beq     a4,s4,PH33
+        bne     a4,s7,PH21
         mv      a3,s6
         mv      a2,s5
-        mv      a0,s2
+        mv      a1,s2
+        mv      a0,s1
         call    new_position
-        j       PHI19
+PH21:
+        addi    s0,s0,1
+        addi    a5,s2,16
+        beq     s3,s0,PH17
+PH24:
+        lw      a0,0(s1)
+        lw      a1,12(a5)
+        lw      a4,0(a5)
+        addi    s2,a5,4
+        ble     a0,a1,PH34
+PH19:
+        bne     a4,s4,PH21
+        addi    s2,a5,20
+        addi    s0,s0,1
+        addi    a5,s2,16
+        bne     s3,s0,PH24
+PH17:
+        lw      ra,44(sp)
+        lw      s0,40(sp)
+        lw      s1,36(sp)
+        lw      s2,32(sp)
+        lw      s3,28(sp)
+        lw      s4,24(sp)
+        lw      s5,20(sp)
+        lw      s6,16(sp)
+        lw      s7,12(sp)
+        addi    sp,sp,48
+        jr      ra
+PH33:
+        lw      a2,32(a5)
+        lw      a3,4(s5)
+        flw     fa5,4(s6)
+        lw      a4,28(a5)
+        sub     a3,a2,a3
+        fcvt.s.w        fa4,a3
+        lw      a1,24(a5)
+        lw      a3,20(a5)
+        fadd.s  fa5,fa5,fa4
+        sw      a2,4(s5)
+        addi    s2,a5,20
+        fsw     fa5,4(s6)
+        beq     a4,zero,PH23
+        lw      a5,0(s5)
+        flw     fa5,0(s6)
+        sw      a4,0(s5)
+        sub     a4,a4,a5
+        fcvt.s.w        fa4,a4
+        fadd.s  fa5,fa5,fa4
+        fsw     fa5,0(s6)
+PH23:
+        sw a3,24(sp)
+        sw a1,20(sp)
+        j       PH21
 
 
 doOverlap:
