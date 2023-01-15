@@ -53,9 +53,9 @@ Lab 5 (Entrega 8/2)
 *) Bruno e Lucas
 
 A fazer:
-* (0,5) história do jogo (com caixas de diálogo) ❎;
-* (1,0) música e efeitos sonoros; 
-* (0,5) mínimo de 1 item utilizável;
+* (0,5) história do jogo (com caixas de diálogo); ❎
+* (1,0) música e efeitos sonoros; ✴
+* (0,5) mínimo de 1 item utilizável; ✅
 * (1,0) mínimo de 5 tipos de "criaturas" diferentes, com um sistema “pedra-papel-tesoura” entre eles; ❎
 * (1,0) mínimo de três tipos de telas jogáveis: seleção de "criaturas" iniciais, área aberta, e ginásio; ✅
 * (1,0) fases com número crescente de inimigos (inclusa a animação deles), espaços abertos e paredes; ❎
