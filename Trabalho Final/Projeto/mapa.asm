@@ -41,13 +41,11 @@ Dec:
 
 .include "mapaTeste.data"
 .include "walk.data"
-#.include "pkmnSelect.data"
-#.include "stadium.data"
-#.include "open1.data"
-#.include "open2.data"
 .include "stages.data"
+.include "scissors.data"
+.include "tree.data"
 
-CONST_FLOAT: .float 10
+CONST_FLOAT: .float 100
 
 imagem: .word 0,0,0
 player_real_position: .float 160, 130
@@ -68,13 +66,17 @@ pkmnsSelect: .word 14,
 1, 60,196,75,223
 1, 252,196,268,223
 2, 150,211,176,227
-exit_pk_select: .word 0,0, 0,200
+exit_pk_select: .word 0,0, 0,200,1
 1, 0,0,319,15
 1, 0,14,58,224
 1, 268,14,319,225
 1, 0,224,319,239
 
-stadium_hb: .word 21,
+stadium_hb: .word 25,
+1, 104,64,120,80
+1, 200,80,216,96
+6, 88,64,136,80,0
+6, 184,80,232,96,1
 1, 72,0,247,24
 1, 56,0,71,239
 1, 248,0,263,239
@@ -96,13 +98,13 @@ stadium_hb: .word 21,
 1, 136,112,150,132
 1, 168,112,183,132
 2, 147,228,172,239, 
-exit_stadium: .word 0,0, 180,50
+exit_stadium: .word 0,0, 180,50,2
 
 open1_hb: .word 13,
 1, 0,0,10,198
 3, 11,0,75,84
-2, 0,0,319,10, 
-open1_up: .word 0,0, 0,200
+2, 0,0,319,20, 
+open1_up: .word 0,0, 0,200,2
 3, 124,0,267,20
 3, 76,69,220,84
 3, 268,0,300,198
@@ -113,9 +115,9 @@ open1_up: .word 0,0, 0,200
 1, 301,0,319,198
 1, 220,199,319,239
 2, 0,229,319,239, 
-open1_down: .word 0,0, 0,185
+open1_down: .word 0,0, 0,185,0
 
-open2_hb: .word 22,
+open2_hb: .word 23,
 1, 0,0,10,239
 1, 11,0,139,33
 1, 140,0,162,52
@@ -124,14 +126,14 @@ open2_hb: .word 22,
 1, 236,0,299,34
 1, 300,0,319,239
 2, 163,45,211,60, 
-open2_up: .word 0,0, 155,200
+open2_up: .word 0,0, 155,200,3
 1, 132,34,139,65
 1, 236,35,243,65
 3, 11,195,75,239
 3, 124,197,219,239
 3, 220,213,299,239
 2, 0,231,319,239,
-open2_down: .word 0,0, 0,20
+open2_down: .word 0,0, 0,20,1
 1, 11,77,59,84
 1, 76,77,139,84
 1, 219,77,251,84
@@ -140,6 +142,12 @@ open2_down: .word 0,0, 0,20
 1, 140,141,235,149
 1, 236,117,299,180
 1, 284,196,299,212
+5, 106,48,120,62
+
+key: .byte 0
+current_map: .word 0
+has_scissors: .byte 0,1
+has_trees: .byte 1,1
 
 .text
 
@@ -280,10 +288,58 @@ LOOP:
 	
 	la t0, animation_state
 	lw a3, 0(t0)   # sould loop
-	jal ra,Animation_Iterator
-	jal Frame_changer
+	jal ra,Animation_Iterator # it moves the player
 	
-	#######################
+	
+	####################### print map objects
+	
+	
+	la t0,has_scissors
+	lb t1,0(t0)
+	beq t1,zero,no_scissors
+	la a0,scissors
+	li a5,0
+	image(a0, 0, 0)	
+no_scissors:
+
+		
+	la t0,current_map
+	lb t1,0(t0)
+	li t2,2
+	bne t1,t2,no_collectable_scissors
+	la t0,has_scissors
+	lb t1,1(t0)
+	beq t1,zero,no_collectable_scissors
+	li a5,0
+	la a0,scissors
+	image(a0, 106, 48)	
+no_collectable_scissors:
+
+	la t0,current_map
+	lb t1,0(t0)
+	li t2,3
+	bne t1,t2,no_trees
+	
+		la t0,has_trees
+		lb t1,0(t0)
+		beq t1,zero,not_first_tree
+		
+		la a0,tree
+		li a5,0
+		image(a0, 104, 64)
+	
+not_first_tree:
+	la t0,has_trees
+	lb t1,1(t0)
+	beq t1,zero,no_trees
+		la a0,tree
+		li a5,0
+		image(a0, 200, 80)
+		
+no_trees:
+
+################# frame changer
+	jal Frame_changer
 	
 j LOOP
 
@@ -372,7 +428,7 @@ END_Inner_I:
 	addi t2,t2,320
 	mv t0,a1
 	addi t1,t1,1
-	#addi a0,a0,1
+	#addi a0,a0,2
 	j Loop_I1
 END_I:
 	ret
@@ -455,7 +511,9 @@ KEY:	li t1,0xFF200000		# carrega o endere�o de controle do KDMMIO
 	andi t0,t0,0x0001		# mascara o bit menos significativo
    	beq t0,zero,FIM   	   	# Se n�o h� tecla pressionada ent�o vai para FIM
   	lw a0,4(t1)  			# le o valor da tecla tecla
-	sw a0,12(t1)  			# escreve a tecla pressionada no display
+  	la t1,key
+  	sb a0,0(t1)
+	#sw a0,12(t1)  			# escreve a tecla pressionada no display
 FIM:	ret	
 
 
@@ -488,7 +546,7 @@ Input_Player:
 	la t2,walkSide0
 	li a2,1
 	#addi a3,a3,4
-	li a4,-7 #*******
+	li a4,-70 #*******
 	
 	#fcvt.s.w ft1,a4		#
 	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
@@ -502,7 +560,7 @@ Next_Input1:
 	la t2,walkSide0
 	li a2,0
 	#addi a3,a3,4
-	li a4,7 #*******
+	li a4,70 #*******
 	
 	#fcvt.s.w ft1,a4		#
 	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
@@ -516,7 +574,7 @@ Next_Input2:
 	la t2,walkFront0
 	li a2,1
 	addi a3,a3,4
-	li a4,7 #*******
+	li a4,70 #*******
 	
 	#fcvt.s.w ft1,a4		#
 	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
@@ -529,7 +587,7 @@ Next_Input3:
 	la t2,walkBack0
 	li a2,0
 	addi a3,a3,4
-	li a4,-7 #*******
+	li a4,-70 #*******
 	
 	#fcvt.s.w ft1,a4		#
 	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
@@ -692,96 +750,160 @@ PHI9:
         ret
         
 player_hitbox_interaction:
-        addi    sp,sp,-48
-        sw      s3,28(sp)
+        addi    sp,sp,-64
+        sw      s3,44(sp)
         lw      s3,0(a1)
-        sw      ra,44(sp)
-        sw      s0,40(sp)
-        sw      s1,36(sp)
-        sw      s2,32(sp)
-        sw      s4,24(sp)
-        sw      s5,20(sp)
-        sw      s6,16(sp)
-        sw      s7,12(sp)
-        ble     s3,zero,PH17
-        mv      s1,a0
-        mv      s5,a2
-        mv      s6,a3
+        sw      ra,60(sp)
+        sw      s0,56(sp)
+        sw      s1,52(sp)
+        sw      s2,48(sp)
+        sw      s4,40(sp)
+        sw      s5,36(sp)
+        sw      s6,32(sp)
+        sw      s7,28(sp)
+        sw      s8,24(sp)
+        sw      s9,20(sp)
+        sw      s10,16(sp)
+        sw      s11,12(sp)
+        ble     s3,zero,PH37
+        mv      s2,a0
+        mv      s6,a2
+        mv      s7,a3
+        li      s10,0
         addi    a5,a1,4
-        li      s0,0
+        li      s1,0
         li      s4,2
-        li      s7,1
-        j       PH24
-PH34:
-        lw      a0,4(a5)
-        lw      a1,8(s1)
-        bgt     a0,a1,PH19
-        lw      a2,12(s1)
-        lw      a3,8(a5)
-        blt     a2,a3,PH19
-        lw      a2,16(a5)
-        lw      a3,4(s1)
-        blt     a2,a3,PH19
-        beq     a4,s4,PH33
-        bne     a4,s7,PH21
-        mv      a3,s6
-        mv      a2,s5
-        mv      a1,s2
-        mv      a0,s1
-        call    new_position
-PH21:
-        addi    s0,s0,1
-        addi    a5,s2,16
-        beq     s3,s0,PH17
-PH24:
-        lw      a0,0(s1)
+        li      s5,6
+        li      s8,5
+        li      s9,1
+        li      s11,10
+PH59:
+        lw      a6,0(s2)
         lw      a1,12(a5)
         lw      a4,0(a5)
-        addi    s2,a5,4
-        ble     a0,a1,PH34
-PH19:
-        bne     a4,s4,PH21
-        addi    s2,a5,20
-        addi    s0,s0,1
-        addi    a5,s2,16
-        bne     s3,s0,PH24
-PH17:
-        lw      ra,44(sp)
-        lw      s0,40(sp)
-        lw      s1,36(sp)
-        lw      s2,32(sp)
-        lw      s3,28(sp)
-        lw      s4,24(sp)
-        lw      s5,20(sp)
-        lw      s6,16(sp)
-        lw      s7,12(sp)
-        addi    sp,sp,48
+        bgt     a6,a1,PH70
+        lw      a6,4(a5)
+        lw      a1,8(s2)
+        bgt     a6,a1,PH70
+        lw      a6,12(s2)
+        lw      a1,8(a5)
+        blt     a6,a1,PH70
+        lw      a2,16(a5)
+        lw      a3,4(s2)
+        blt     a2,a3,PH70
+        beq     a4,s4,PH73
+        bne     a4,s5,PH54
+        addi    s0,a5,8
+        li      a4,0
+        la a0,key
+        lb a0,0(a0)
+        mv a4,a0
+        la t0,has_scissors
+        lb s10,0(t0)
+        beq s10,zero,PH41
+        beq     a4,s11,PH74
+PH41:
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PH59
+PH37:
+        lw      ra,60(sp)
+        lw      s0,56(sp)
+        lw      s1,52(sp)
+        lw      s2,48(sp)
+        lw      s3,44(sp)
+        lw      s4,40(sp)
+        lw      s5,36(sp)
+        lw      s6,32(sp)
+        lw      s7,28(sp)
+        lw      s8,24(sp)
+        lw      s9,20(sp)
+        lw      s10,16(sp)
+        lw      s11,12(sp)
+        addi    sp,sp,64
         jr      ra
-PH33:
+PH70:
+        addi    s0,a5,24
+        beq     a4,s4,PH41
+        addi    s0,a5,4
+        bne     a4,s5,PH41
+        addi    s0,a5,8
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PH59
+        j       PH37
+PH54:
+        addi    s0,a5,4
+        beq     a4,s8,PH75
+        bgt     a4,s8,PH41
+        bne     a4,s9,PH41
+        mv      a3,s7
+        mv      a2,s6
+        mv      a1,s0
+        mv      a0,s2
+        call    new_position
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PH59
+        j       PH37
+PH73:
         lw      a2,32(a5)
-        lw      a3,4(s5)
-        flw     fa5,4(s6)
+        lw      a3,4(s6)
+        flw     fa5,4(s7)
         lw      a4,28(a5)
         sub     a3,a2,a3
         fcvt.s.w        fa4,a3
         lw      a1,24(a5)
         lw      a3,20(a5)
         fadd.s  fa5,fa5,fa4
-        sw      a2,4(s5)
-        addi    s2,a5,20
-        fsw     fa5,4(s6)
-        beq     a4,zero,PH23
-        lw      a5,0(s5)
-        flw     fa5,0(s6)
-        sw      a4,0(s5)
+        lw      a0,36(a5)
+        sw      a2,4(s6)
+        addi    s0,a5,24
+        fsw     fa5,4(s7)
+        beq     a4,zero,PH53
+        lw      a5,0(s6)
+        flw     fa5,0(s7)
+        sw      a4,0(s6)
         sub     a4,a4,a5
         fcvt.s.w        fa4,a4
         fadd.s  fa5,fa5,fa4
-        fsw     fa5,0(s6)
-PH23:
-        sw a3,24(sp)
-        sw a1,20(sp)
-        j       PH21
+        fsw     fa5,0(s7)
+PH53:
+        la t0,current_map
+        sw a0, 0(t0)
+        sw a3,40(sp)
+        sw a1,36(sp)
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PH59
+        j       PH37
+PH75:
+        la t0,has_scissors
+        sb zero,1(t0)
+        li t1,1
+        sb t1,0(t0)
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PH59
+        j       PH37
+PH74:
+        lw      a5,20(a5)
+        li      a4,0
+        la t0,has_trees
+        add t0,t0,a5
+        sb zero,0(t0)
+        la a4, stadium_hb
+
+        slli t0,a5,2
+        add t0,t0,a5
+        slli t0,t0,2
+        addi a4,a4,4
+        add a4,a4,t0
+        sw zero,0(a4)
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PH59
+        j       PH37
 
 
 doOverlap:
