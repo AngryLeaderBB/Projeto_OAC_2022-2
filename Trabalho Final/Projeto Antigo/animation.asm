@@ -64,6 +64,7 @@ Dec:
 .include "walkFront.data"
 #.include "walkBack.data"
 .include "bat-fly_20x48.data"
+.include "stadium.data"
 
 imagem: .word 0,0,0
 

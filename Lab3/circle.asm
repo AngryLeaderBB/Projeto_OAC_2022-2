@@ -32,6 +32,15 @@ ecall
 
 .data
 
+FREQ:	.string "Frequencia = "
+CICL:	.string "Ciclos = "
+INST:	.string "Instrucoes = "
+TEMED:  .string "Tempo Medido = "
+CPI:	.string "CPI = "
+TECALC: .string "Tempo Calculado = "
+
+freq: .float 4.1666666
+
 draw: .string "Empate"
 player: .string "Jogador"
 won: .string "Ganhou!"
@@ -247,6 +256,20 @@ beq s1, t0, get_key	#
 
 ######## AI #######################################
 
+############ register time
+addi sp,sp,-24
+sw s0,0(sp)
+sw s1,4(sp)
+sw s2,8(sp)
+sw s3,12(sp)
+sw s4,16(sp)
+sw s5,20(sp)
+
+rdcycle s0
+rdinstret s1
+rdtime s2
+############## 
+
 la t0, difficult	# checa dificuldade
 lw t0,0(t0)		#
 
@@ -270,6 +293,76 @@ jal hard_mode		#
 
 end_ai_command:		# fim da acao da ia
 
+
+########### end register time
+
+rdtime s5
+rdinstret s4
+rdcycle s3
+
+addi sp,sp,-12
+sw a0,0(sp)
+sw a1,4(sp)
+sw a2,8(sp)
+
+sub s0,s3,s0
+fcvt.s.w ft0,s0		# ciclos
+sub s1,s4,s1
+fcvt.s.w ft1,s1		# instru��es
+sub s2,s5,s2
+fcvt.s.w ft2,s2	 	# tempo
+
+
+la a0,freq
+flw fa0,0(a0)
+la a0,FREQ
+li a1,2
+#fdiv.s fa0,ft0,ft2	# Frequencia
+fmv.s ft3,fa0
+jal print_float
+
+
+la a0,CICL
+li a1,12
+mv a2,s0	# Ciclos
+jal print_int
+
+la a0,INST
+li a1,22
+mv a2,s1	# Instrucoes
+jal print_int
+
+la a0,TEMED
+li a1,32
+fmv.s fa0,ft2		# tempo exec exec em ms
+jal print_float
+
+la a0,CPI
+li a1,42
+fdiv.s fa0,ft0,ft1	#CPI
+jal print_float
+
+
+la a0,TECALC
+li a1,52
+fdiv.s fa0,ft0,ft3	# tempo medido em ms
+jal print_float
+
+lw a0,0(sp)
+lw a1,4(sp)
+lw a2,8(sp)
+addi sp,sp,12
+
+lw s0,0(sp)
+lw s1,4(sp)
+lw s2,8(sp)
+lw s3,12(sp)
+lw s4,16(sp)
+lw s5,20(sp)
+addi sp,sp,24
+
+
+############
 
 ##################################################
 
@@ -1097,5 +1190,39 @@ HM73:				##
         lw      s4,8(sp)	##
         addi    sp,sp,32	##
         jr      ra		##
+
         
+print_float:
+	# a0 = string address, a1 = y position, fa0 = float address
+	
+	mv a2,a1
+	li a1,0
+	li a3,0xff
+	li a4,1
+	li a7,104
+	ecall 
+	
+	li a7,102
+	ecall
+
+	ret
+	
+print_int:
+	# a0 = string address, a1 = y position, a2 = int
+	
+	mv a5,a2
+	
+	mv a2,a1
+	li a1,0
+	li a3,0xff
+	li a4,1
+	li a7,104
+	ecall 
+	
+	mv a0,a5
+	li a7,101
+	ecall
+
+	ret
+	      
 .include "SYSTEMv21.s"
