@@ -74,9 +74,17 @@ board: .word
 .text
 
 ############### menu #################
+li a7, 48               # Limpa Frame
+li a0, 0                # Cor preta
+
+li a1, 0                # ID do Frame
+ecall                   # (48) Limpa Frame
+
+li a1, 1               # ID do Frame
+ecall                   # (48) Limpa Frame
+
 li a3, 0xFF		# cor branca
 li a4, 0		# frame 0
-
 la a0, dificuldade	#
 li a1, 117		# imprime a string "dificuldade"
 li a2, 89		# no menu
@@ -195,12 +203,12 @@ top_not_easy:			#
 				#
 li t1, 1			#
 				#
-bne t0, t1,top_not_normal	#
+bne t0, t1,top_hard	#
 la a0, medio			#
 li a3, 0x77			#
 colored_string(138, 28)		#
 j end_top_string		#
-top_not_normal:			#
+top_hard:			#
 				#
 la a0, dificil			#
 li a3, 0x6			#
@@ -236,7 +244,7 @@ j key_tip	#
 end_key_tip:	#
 
 
-la a0, board		# imprime pesas no tabuleiro
+la a0, board		# imprime pecas no tabuleiro
 jal print_board		#
 
 
@@ -268,28 +276,34 @@ sw s5,20(sp)
 rdcycle s0
 rdinstret s1
 rdtime s2
+
 ############## 
 
 la t0, difficult	# checa dificuldade
 lw t0,0(t0)		#
+ 
+li t1, 0
+beq t0,t1, easy	        # Checa se esta no facil
 
-bne t0,zero,not_easy	#
-jal easy_mode		# facil
-j end_ai_command	#
-not_easy:		#
+li t1, 1
+beq t0, t1,normal       # Checa se esta no dificil
 
-li t1, 1		#
-			#
-bne t0, t1,not_normal	#
-la a0, board		# medio
-la a1, color		#
-jal normal_mode		#
-j end_ai_command	#
-not_normal:		#
+li t1, 2
+beq t0, t1, hard
 
-la a0, board		#
-la a1, color		# dificio
-jal hard_mode		#
+# Entra no modo facil se nenhuma for verdadeira
+
+easy:   jal easy_mode		# Facil
+        j end_ai_command	        #
+
+normal: la a0, board		# medio
+        la a1, color		#
+        jal normal_mode		#
+        j end_ai_command	#	        
+
+hard:   la a0, board	        # Dificil
+        la a1, color		#
+        jal hard_mode		#
 
 end_ai_command:		# fim da acao da ia
 
@@ -308,7 +322,7 @@ sw a2,8(sp)
 sub s0,s3,s0
 fcvt.s.w ft0,s0		# ciclos
 sub s1,s4,s1
-fcvt.s.w ft1,s1		# instru��es
+fcvt.s.w ft1,s1		# instrucoes
 sub s2,s5,s2
 fcvt.s.w ft2,s2	 	# tempo
 
@@ -1058,11 +1072,18 @@ game_won:			##	Gerado no compiler explorer
         tail    win_diagonal_incresing	##
 
 easy_mode:
-li a0, 2	#
-li a1, 8	#
-li a7, 42	# a0 = randint(0, 7)
-ecall		#
-ret		#
+li a0, 2	        # Index do numero aleatorio
+li a1, 8	        # Numero maximo aleatorio
+li a7, 41	        # a0 = randint(0, 7)     
+ecall		        # Gera o numero aleatorio
+
+li t0, 6                                        # Numero que sera subtraido do numero aleatorio
+andi a0, a0, 255                                 # Pega os primeiros 4 bytes
+check_bound: blt a0, a1, easy_mode_end          # Checa se esta no range permitido
+sub a0, a0, t0                                  # Subtrai 6 ate esta no range
+j check_bound                                   # Loop
+
+easy_mode_end:  ret		        
 
 indetify_win_move:		## 	Gerado no compiler explorer
         addi    sp,sp,-16	## 	   codigo original em c
