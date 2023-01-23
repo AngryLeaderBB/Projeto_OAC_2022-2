@@ -1,4 +1,17 @@
 .include "../MACROSv21.s"
+.macro print_dialog(%address, %x, %y, %written, %letters, %lines, %color)
+
+	mv a0, %address,
+	mv a1, %x,
+	mv a2, %y
+	mv a3, %written
+	li a4, %letters
+	li a5, %lines
+	li a6, %color
+	call PrintDialog
+
+.end_macro
+
 .macro image(%imageAddressRegis , %xLower , %yLower)
 	#address is the address of the bitmap display
 
@@ -6,7 +19,7 @@
 	li a1,%xLower
 	li a2,%yLower
 	
-	jal ra,Image
+	call Image
 
 .end_macro
 
@@ -16,7 +29,7 @@
 	li a2,%yLower
 	mv a3,%should_loop
 	
-	jal ra,Animation_Iterator
+	call Animation_Iterator
 .end_macro
 
 .macro print_regis(%regis,%is_hexa)
@@ -44,6 +57,7 @@ Dec:
 .include "stages.data"
 .include "scissors.data"
 .include "tree.data"
+.include "battle/battleText.data"
 
 CONST_FLOAT: .float 100
 
@@ -149,6 +163,11 @@ current_map: .word 0
 has_scissors: .byte 0,1
 has_trees: .byte 1,1
 
+current_dialog: .word 1,0 # bool, dialog address
+
+dialogo_inicial: .word 126
+.string "Voce magicamente brota numa sala suspeita\n\n\n\n-Voce\n Oh nao eu vou perder a aula de OAC, eh melhor eu descobrir como sair daqui"
+
 .text
 
 la s0,player_position	#
@@ -207,10 +226,30 @@ li t0,0	   		# 0 para direita 1 para esquerda
 sw t0,4(a0)
 
 
+#######
+
+la t0,dialogo_inicial
+la t1,current_dialog
+sw t0,4(t1)
+
 #### main loop #####
 
 
 LOOP:	
+
+	
+#################### dialog
+	
+	la t0,current_dialog
+	lw t1,0(t0)
+	beq t1,zero,Dont_Dialog
+		sw zero,0(t0)
+		lw a0,4(t0)
+		call Dialog_stop
+	
+Dont_Dialog:
+####################
+
 	li a7,30	# saves global time
 	ecall
 	mv s3,a0
@@ -229,7 +268,7 @@ LOOP:
 	#li a3, 100
 	#li a4, 16
 	#li a5, 8
-	#jal bar
+	#call bar
 	
 	################ update last player position
 	
@@ -241,7 +280,7 @@ LOOP:
 	
 	####################  input player
 	la a0,imagem
-	jal Input_Player
+	call Input_Player
 	
 	####### change hitboxes
 	
@@ -277,7 +316,7 @@ LOOP:
 	mv a1,s5
 	mv a2,s0
 	addi a3,s0,-8
-	jal player_hitbox_interaction
+	call player_hitbox_interaction
 	
 	###################### print player
 	
@@ -288,7 +327,7 @@ LOOP:
 	
 	la t0, animation_state
 	lw a3, 0(t0)   # sould loop
-	jal ra,Animation_Iterator # it moves the player
+	call Animation_Iterator # it moves the player
 	
 	
 	####################### print map objects
@@ -339,46 +378,13 @@ not_first_tree:
 no_trees:
 
 ################# frame changer
-	jal Frame_changer
+	call Frame_changer
 	
 j LOOP
 
 
 li a7,10
 ecall
-
-#********************* por favor retirar depois do debug
-bar:
-        mul     a3,a3,a4
-        li      a6,100
-        div     a3,a3,a6
-        add     a6,a3,a1
-        bge     a1,a6,.L1
-        add     a5,a2,a5
-        bge     a2,a5,.L1
-        slli    a4,a5,2
-        add     a4,a4,a5
-        slli    a5,a2,2
-        mv      a7,s1
-        slli    a4,a4,6
-        add     a2,a5,a2
-        add     a4,a4,a7
-        slli    a2,a2,6
-        add     a4,a4,a1
-        andi    a3,a0,0xff
-        add     a2,a2,a7
-.L6:
-        add     a5,a2,a1
-.L4:
-        sb      a3,0(a5)
-        addi    a5,a5,320
-        bne     a4,a5,.L4
-        addi    a1,a1,1
-        addi    a4,a4,1
-        bne     a1,a6,.L6
-.L1:
-        ret
-
 
 ##################### IMAGE
 
@@ -461,7 +467,7 @@ Dont_Restart_Loop:
 
 	lw a5,4(a0) # pega orientacao de a0
 	mv a0,t0
-	jal ra,Image # chama Image
+	call Image # chama Image
 	lw ra,0(sp)
 	lw a0,4(sp)
 	
@@ -537,7 +543,7 @@ Input_Player:
 	
 	addi sp,sp,-4
 	sw ra,0(sp)
-	jal KEY
+	call KEY
 	
 	mv a3,s0
 	
@@ -552,7 +558,7 @@ Input_Player:
 	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
 	#fcvt.w.s a4,ft0		#
 	
-	jal Move_Bat_Command
+	call Move_Bat_Command
 	
 Next_Input1:
 	li t0,100 # d
@@ -566,7 +572,7 @@ Next_Input1:
 	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
 	#fcvt.w.s a4,ft0		#
 	
-	jal Move_Bat_Command
+	call Move_Bat_Command
 	
 Next_Input2:
 	li t0,115 # s 
@@ -580,7 +586,7 @@ Next_Input2:
 	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
 	#fcvt.w.s a4,ft0		#
 	
-	jal Move_Bat_Command
+	call Move_Bat_Command
 	
 Next_Input3:
 	li t0,119 # w
@@ -594,7 +600,7 @@ Next_Input3:
 	#fcvt.w.s a4,ft0		#
 	
 	bne a0,t0,Next_Input4
-	jal Move_Bat_Command
+	call Move_Bat_Command
 Next_Input4:
 	la t0, animation_state	# should loop = false
 	sw zero,0(t0)		#
@@ -609,7 +615,7 @@ Move_Bat_Command:
 	sw t0,4(t3)
 	sub t0,t0,t1
 	
-	jal Move_Bat
+	call Move_Bat
 
 End_IP:
 	lw ra,0(sp)
@@ -928,4 +934,151 @@ doOverlap:
 .L2:
         ret
 
+########################### dialog
+
+Dialog_stop:
+# a0 = dialog address
+addi sp,sp,-12
+sw ra,0(sp)
+sw zero,4(sp)
+sw a0,8(sp)
+
+Loop_DS:
+
+la a0, battleText	# Load map
+li a5,0
+image(a0, 0, 168)
+
+#la t0, current_min_text
+lw t3,4(sp)
+
+lw t0,8(sp)
+li t1, 15
+li t2, 182
+print_dialog(t0, t1, t2, t3, 35, 5, 0x51FF)
+
+
+mv t2,a0
+
+call KEY
+
+li t1, 10
+bne a0,t1, End_If_DS
+	#la t0, current_min_text
+	beq t2,zero,end_Loop_DS
+	sw t2,4(sp)
+
+
+End_If_DS:
+
+call Frame_changer
+
+j Loop_DS
+end_Loop_DS:
+
+lw ra,0(sp)
+addi sp,sp,12
+
+ret
+
+PrintDialog:
+	# a0 = address ( length + string)
+	# a1 = x, a2 = y
+	# a3 = num already read letters
+	# a4 = max letters per line
+	# a5 = max lines per textBox
+	# a6 = color
+	
+	lw t0,0(a0)  # t0 = length
+	addi a0,a0,4 # addrress of string
+	mv t1,a4     # max letters per line
+	mv t2,a5     # max lines per textBox
+	
+	li t3,0	     # index of the letter 
+	li t4,0	     # index of the line
+	mv t5,a3     # num of letters written
+	
+	mv t6, a1
+	mv a5, a2
+
+	add a0,a0,t5
+	
+	li a7,111    # Print char
+	mv a3, a6   # Color
+	
+	srai a4,s1,20
+	andi a4,a4,1
+	#ori a4,s1,-2	 # Frame
+	#neg a4,a4
+Loop_PD:	
+	beq t2,t4,End_PD
+Inner_Loop_PB:	
+	beq t1,t3,End_Inner_PD
+	beq t0,t5,End_PD
+	
+	slli a1,t3,3
+	add a1,a1,t6   #  x 
+	slli a2,t4,3
+	add a2,a2,a5   # y
+	
+	addi sp,sp,-8
+	sw a0,0(sp)
+	sw s0,4(sp)
+
+	lb a0,0(a0)
+	li s0,10
+	bne a0,s0,not_new_line
+	
+	mv t3,t1
+	addi t3,t3,-1
+		
+not_new_line:	ecall	
+	
+	lw a0,0(sp)
+	lw s0,4(sp)
+	addi sp,sp,8
+	
+	addi t3,t3,1
+	addi t5,t5,1
+	addi a0,a0,1
+	j Inner_Loop_PB
+End_Inner_PD:
+
+	li t3,0
+	addi t4,t4,1
+	j Loop_PD
+End_PD:	
+
+	lb t2,-1(a0)
+	addi t2,t2,-10
+	
+	beq t2,zero,End_Next_Symbol
+		
+	slt t1,t5,t0
+	beq t1,zero,End_Next_Symbol
+	
+	addi a1, a1, 8
+
+	li a0,73
+	li a3,0xC7FF
+	
+	#srai a4,s1,20
+	#andi a4,a4,1
+	#li a4,0           #
+
+	li a7,111
+	ecall
+
+	li a0,62
+	addi a1,a1,2
+	li a3,0xC7FF
+	#li a4,0        #
+	ecall
+End_Next_Symbol:
+	beq t5,t0,If_PD
+	mv a0, t5
+	ret
+If_PD:	li a0,0
+	ret
+	
 .include "../SYSTEMv21.s"

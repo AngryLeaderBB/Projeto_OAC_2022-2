@@ -320,7 +320,6 @@ key:	li t1,0xFF200000		#
 	andi t0,t0,0x0001		# Copiei do exemplo mesmo
    	beq t0,zero,fim  	   	# pode denunciar
   	lw a0,4(t1)  			# 
-	sw a0,12(t1)  			# 
 fim:	ret	
 
 menu:
