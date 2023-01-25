@@ -25,7 +25,7 @@ Parte 3)
 * 3.1 e 3.2) Bruno 
 * 3.3 e 3.4) Lucas
 
-Lab 2 (Entrega 4/1)
+Lab 2 (Entrega 4/1) ✅
 -
 
 Divisão de atividades:
@@ -33,7 +33,7 @@ Divisão de atividades:
 * 2 ) Bruno
 * 3 ) Lucas
 
-Lab 3 (Entrega 18/1)
+Lab 3 (Entrega 18/1) ✅
 -
 
 *) Lucas
