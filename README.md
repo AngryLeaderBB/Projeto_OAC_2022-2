@@ -38,7 +38,7 @@ Lab 3 (Entrega 18/1) ✅
 
 *) Lucas
 
-Lab 4 (Entrega 30/1)
+Lab 4 (Entrega 4/2)
 -
 
 *) Lucas
