@@ -58,6 +58,7 @@ Dec:
 .include "scissors.data"
 .include "tree.data"
 .include "battle/battleText.data"
+.include "menu.data"
 
 CONST_FLOAT: .float 100
 
@@ -167,6 +168,40 @@ current_dialog: .word 1,0 # bool, dialog address
 
 dialogo_inicial: .word 126
 .string "Voce magicamente brota numa sala suspeita\n\n\n\n-Voce\n Oh nao eu vou perder a aula de OAC, eh melhor eu descobrir como sair daqui"
+
+pkmns_array:
+
+.word 0  # current_pkmn, if don't -1
+.float 100 # level
+.word 10, 50, 10 # level, stats attack, stats defense 
+
+.word 1  # is_active?, current_pkmn
+.float 90 # level
+.word 9, 50, 10 # level, stats attack, stats defense 
+
+.word 2  # is_active?, current_pkmn
+.float 80 # level
+.word 8, 50, 10 # level, stats attack, stats defense 
+
+.word 3  # is_active?, current_pkmn
+.float 70 # level
+.word 7, 50, 10 # level, stats attack, stats defense 
+
+#.word 4  # is_active?, current_pkmn
+#.float 60 # level
+#.word 6, 50, 10 # level, stats attack, stats defense 
+
+pkmns_names:
+.byte 10  
+.string "Charmander"
+.byte 8
+.string "Squirtle"
+.byte 9
+.string "Bulbasaur"
+.byte 6
+.string "Machop"
+.byte 6
+.string "Ratata"
 
 .text
 
@@ -329,7 +364,18 @@ Dont_Dialog:
 	lw a3, 0(t0)   # sould loop
 	call Animation_Iterator # it moves the player
 	
+
+	####################### action menu
 	
+	la t0, key
+	lb t1,0(t0)
+	li t2, 27
+	
+	bne t1,t2,dont_action_menu
+	call action_menu
+	
+dont_action_menu:
+			
 	####################### print map objects
 	
 	
@@ -1080,5 +1126,167 @@ End_Next_Symbol:
 	ret
 If_PD:	li a0,0
 	ret
+
 	
+############################# action menu
+
+action_menu:
+
+addi sp,sp,-4
+sw ra,0(sp)
+
+loop_menu:
+
+la t0,menu
+li a5,0
+image(t0,0,0)
+call print_menu
+call Frame_changer
+call KEY
+
+bne a0,zero,end_menu
+
+j loop_menu
+end_menu:
+
+lw ra,0(sp)
+addi sp,sp,4
+
+ret
+
+##############################################
+
+print_menu:
+
+li t2,0
+li t3,4
+
+li a2, 39
+li a3, 0xc7ff 
+srai a4,s1,20
+andi a4,a4,1
+la t4, pkmns_names
+la t5, pkmns_array
+
+addi sp,sp,-16
+sw ra,0(sp)
+sw t4,4(sp)
+sw a2,8(sp)
+#sw a3,12(sp)
+sw a4,12(sp)
+
+loop_PM:
+beq t2,t3,end_PM
+
+#mv a0,t4
+lw a0,4(sp)
+#mv a1,t2
+lw a1,0(t5)
+addi a1,a1,1
+beq a1,zero,dont_print_menu
+addi a1,a1,-1
+lw a2,8(sp)
+li a3,0xc7ff
+lw a4,12(sp)
+call access_name
+li a1, 95
+li a7, 104
+ecall
+#addi a2,a2,37
+#sw a2,8(sp)
+
+li a0,0x33
+li a1,194
+#li a2,41
+lw a2,8(sp)
+addi a2,a2,2
+
+flw fa0,4(t5)
+fcvt.w.s a3,fa0
+#li a3,100
+li a4,61
+li a5,3
+call bar
+
+lw a0,8(t5)
+li a1,135
+lw a2,8(sp)
+addi a2,a2,10
+li a3,0xc7ff
+lw a4,12(sp)
+li a7,101
+ecall
+
+dont_print_menu:
+
+lw a2,8(sp)
+addi a2,a2,37
+sw a2,8(sp)
+
+addi t5,t5,20
+addi t2,t2,1
+j loop_PM
+
+end_PM:
+
+lw ra,0(sp)
+addi sp,sp,16
+
+ret
+
+##############################################
+
+access_name:
+# a0 = address names
+# a1 = index
+
+li t0, 0
+
+loop_AN: beq t0,a1,end_AN
+
+lb t1,0(a0)
+add a0,a0,t1
+addi a0,a0,2
+
+addi t0,t0,1
+
+j loop_AN
+end_AN:
+
+addi a0,a0,1
+
+ret
+
+#################################################	
+
+bar:
+        mul     a3,a3,a4
+        li      a7,100
+        div     a3,a3,a7
+        add     a7,a3,a1
+        bge     a1,a7,.L1
+        add     a5,a2,a5
+        bge     a2,a5,.L1
+        slli    a4,a5,2
+        add     a4,a4,a5
+        slli    a5,a2,2
+        slli    a4,a4,6
+        add     a2,a5,a2
+        add     a4,a4,s1
+        slli    a2,a2,6
+        add     a4,a4,a1
+        add     a2,a2,s1
+        andi    a3,a0,0xff
+.L6:
+        add     a5,a1,a2
+.L4:
+        sb      a3,0(a5)
+        addi    a5,a5,320
+        bne     a4,a5,.L4
+        addi    a1,a1,1
+        addi    a4,a4,1
+        bne     a1,a7,.L6
+.L1:
+        ret
+        
 .include "../SYSTEMv21.s"
