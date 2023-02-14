@@ -1,4 +1,10 @@
 .include "../MACROSv21.s"
+.macro newline()
+	li a0,10
+	li a7,11
+	ecall
+.end_macro
+
 .macro image(%imageAddressRegis , %xLower , %yLower, %orientation)
 	#address is the address of the bitmap display
 
@@ -72,8 +78,8 @@ fight: .word 5
 .string "Fight"
 pkmn: .word 4
 .string "Pkmn"
-bag: .word 3
-.string "Bag"
+bag: .word 4
+.string "Talk"
 run: .word 3
 .string "Run"
 
@@ -179,7 +185,7 @@ pkmns_back:
 ########## menu
 menu_position: .word  0, 0
 lines_columns_select: .word  2, 2
-states_positions_select: .word	1,182,188, 0,247,188
+states_positions_select: .word	1,182,188, 10,247,188
 				2,182,208, 3,247,208
 				
 lines_columns_battle: .word  2, 1
@@ -214,6 +220,9 @@ enemy_pkmn_index: .word 0
         .word   1073741824
 .LC2:
         .word   1112014848
+
+constCP1: .float 0.0125
+constCP2: .float 0.075
         
 # normal : 0, fire : 1, water : 2, grass : 3, fighting : a4, dark : 5 
 
@@ -268,10 +277,46 @@ sw t1,16(t0)
 
 ######################## main loop
 
+la a0,pkmns_array
+la a1,enemy_array
 call Battle
 
+#li a7,1
+#ecall
+
+li t1,0
+li t2,4
+la t0, pkmns_array
+loop:
+beq t1,t2,end
+
+lw a0,0(t0)
 li a7,1
 ecall
+newline()
+flw fa0,4(t0)
+fcvt.w.s a0,fa0
+li a7,1
+ecall
+newline()
+lw a0,8(t0)
+li a7,1
+ecall
+newline()
+lw a0,12(t0)
+li a7,1
+ecall
+newline()
+lw a0,16(t0)
+li a7,1
+ecall
+newline()
+newline()
+
+addi t0,t0,20
+addi t1,t1,1
+j loop
+end:
 
 li a7,10
 ecall
@@ -280,12 +325,42 @@ ecall
 ####################
 Battle:
 
-addi sp,sp,-4
+addi sp,sp,-12
 sw ra,0(sp)
+sw a0,4(sp)
+sw a1,8(sp)
 
 # adicionar inicialiazacao
 # 
-   
+la a0, attackSelec	# Load map
+image(a0, 0, 168, 0)	#
+lw a0,4(sp)
+call select_pkmn
+
+lw t0,8(sp)
+lw t1,0(t0)
+lw t2,4(t0)
+lw t3,8(t0)
+lw t4,12(t0)
+lw t5,16(t0)
+la t0,current_enemy_pkmn
+sw t1,0(t0)
+sw t2,4(t0)
+sw t3,8(t0)
+sw t4,12(t0)
+sw t5,16(t0)
+sw zero,20(t0)                  
+       
+
+call refresh_battle_screen
+call Frame_changer
+call refresh_battle_screen
+li a0,2
+li a7,41
+ecall
+andi a0,a0,0x1
+beq a0,zero,Enemy_turn
+                              
 Player_Loop:
 
 call refresh_battle_screen
@@ -320,18 +395,20 @@ beq t0, t1, battle_state
 li t1, 2
 beq t0, t1, pkmn_state
 li t1, 3
-beq t0, t1, bag_state
+beq t0, t1, talk_state
 li t1,4
 beq t0, t1, attack_state
 li t1,5
 beq t0, t1, attack_state
-
 slt t2,t1,t0
-li t1,11
+li t1,10
 slt t3,t0,t1
 and t1,t2,t3
 addi t1,t1,-1
 beq zero,t1, pkmn_select_state
+
+li t1,10
+beq t0,t1, run_state
 
 	addi sp,sp, -4
 	sw a0,0(sp)
@@ -378,6 +455,18 @@ beq zero,t1, pkmn_select_state
 	li t2, 208
 	print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
 j end_state
+
+run_state:
+
+la t2,menu_state
+sw zero,0(t2)
+
+lw a0,4(sp)
+call calculate_chance
+bne a0,zero,End_battle
+
+#j end_state
+j Enemy_turn
 
 battle_state:
 
@@ -459,17 +548,74 @@ pkmn_state:
 	call pkmn_select_menu
 	
 j end_state
-bag_state:
+talk_state:
 
-	la a0, attackSelec	# Load map
-	image(a0, 0, 168, 0)	#
+	#la a0, attackSelec	# Load map
+	#image(a0, 0, 168, 0)	#
 	
-	la t0,bag
-	li t1, 20
-	li t2, 198
-	print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+	#la t0,bag
+	#li t1, 20
+	#li t2, 198
+	#print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
 	
-	j end_state
+	#j end_state
+	la t2,menu_state
+	sw zero,0(t2)
+	
+	la a0,enemy_array
+	call calculate_chance
+	beq a0,zero,Enemy_turn
+	
+	la a0, battleText	# Load map
+	li a5,0
+	image(a0, 0, 168, 1)
+	call print_lifes
+	call Frame_changer
+	la a0, battleText	# Load map
+	li a5,0
+	image(a0, 0, 168, 1)
+	call print_lifes
+	call Frame_changer
+	
+loop_pkmn_change:	
+	call key
+	li t0,10
+	beq t0,a0,end_pkmn_change
+	call pkmn_select_menu
+	call Frame_changer
+
+	j loop_pkmn_change
+	
+end_pkmn_change:
+			
+	la t0,current_menu
+	lw t3,0(t0)	
+	addi t0,t3,-6
+	li t1,20
+	mul t0,t0,t1
+	lw t2,4(sp)
+	add t6,t2,t0
+	
+	la t1,enemy_pkmn_index
+	lw t0,(t1)
+	li t1,20
+	mul t0,t0,t1
+	la t2,enemy_array
+	add t0,t2,t0
+	
+	lw t1,0(t0)
+	lw t2,4(t0)
+	lw t3,8(t0)
+	lw t4,12(t0)
+	lw t5,16(t0)
+	
+	sw t1,0(t6)
+	sw t2,4(t6)
+	sw t3,8(t6)
+	sw t4,12(t6)
+	sw t5,16(t6)
+	
+	j End_battle
 
 pkmn_select_state:
 
@@ -481,7 +627,7 @@ pkmn_select_state:
 	la t2,menu_state
 	sw zero,0(t2)
 	
-	la t2,pkmns_array
+	lw t2,4(sp)
 	add t0,t2,t0
 	
 	lw t1,0(t0)
@@ -535,7 +681,7 @@ attack_state:
 	lw a4,0(t0)
 	addi a4,a4,1
 	call attack
-	
+		
 	la t0,life_enemy
 	flw ft1,0(t0)
 	fsub.s ft1,ft1,fa0
@@ -553,7 +699,7 @@ attack_state:
 	fle.s t0,ft1,ft0
 	beq t0,zero,Enemy_turn
 	
-	la t0, enemy_array
+	lw t0,8(sp)
 	la t1, enemy_pkmn_index
 	lw t1,0(t1)
 	li t2,20
@@ -586,7 +732,7 @@ dont_win:
 	li t1,20
 	mul t0,t0,t1
 	
-	la t2,enemy_array
+	lw t2,8(sp)
 	add t0,t2,t0
 	
 	# may cause bug
@@ -638,11 +784,19 @@ Enemy_turn:
 	lw a4,0(t0)
 	addi a4,a4,1
 	call attack
-	
+
+	la t0,current_player_pkmn
+	lw t0,0(t0)
+	lw t1,4(sp)
+	li t2,20
+	mul t0,t0,t2
+	add t1,t0,t1
+			
 	la t0,life_player
 	flw ft1,0(t0)
 	fsub.s ft1,ft1,fa0
 	fsw ft1,0(t0)
+	fsw ft1,4(t1)
 
 	la a0,recebeu
 	fcvt.w.s a1,fa0
@@ -652,7 +806,7 @@ Enemy_turn:
 	fle.s t0,ft1,ft0
 	beq t0,zero,Player_Loop
 	
-	la t0, pkmns_array
+	lw t0,4(sp)
 	la t1, player_pkmn_index
 	lw t1,0(t1)
 	li t2,20
@@ -676,50 +830,8 @@ Enemy_turn:
 	j End_battle
 dont_lose:
 	li a0,0
-			
-loop_pkmn_select:	
-	call key
-	li t0,10
-	beq t0,a0,end_pkmn_select
-	call pkmn_select_menu
-	call Frame_changer
-
-	j loop_pkmn_select
-	
-end_pkmn_select:
-	
-	la t0,current_menu
-	lw a0,0(t0)	
-	
-	addi t0,a0,-6
-	mv t6,t0
-	li t1,20
-	mul t0,t0,t1
-	
-	la t2,menu_state
-	sw zero,0(t2)
-	
-	la t2,pkmns_array
-	add t0,t2,t0
-	
-	lw t1,0(t0)
-	
-	blt t1,zero,loop_pkmn_select
-	
-	lw t2,4(t0)
-	lw t3,8(t0)
-	lw t4,12(t0)
-	lw t5,16(t0)
-	
-	la t0,current_player_pkmn
-	
-	sw t1,0(t0)
-	sw t2,4(t0)
-	sw t3,8(t0)
-	sw t4,12(t0)
-	sw t5,16(t0)
-	sw t6,20(t0)	
-
+	lw a0,4(sp)
+	call select_pkmn			
 	#li a7,10
 	#ecall
 	
@@ -728,10 +840,7 @@ end_pkmn_select:
 
 End_battle:
 
-lw ra,0(sp)
-addi sp,sp,4
-
-la t0,pkmns_array
+lw t0,4(sp)
 li t1,0
 li t2,4
 
@@ -747,6 +856,9 @@ addi t0,t0,20
 addi t1,t1,1
 j recover_vals
 end_recover_vals:
+
+lw ra,0(sp)
+addi sp,sp,12
 
 ret 
 
@@ -1396,6 +1508,103 @@ sw ra,0(sp)
 
 lw ra,0(sp) 
 addi sp,sp,8
+
+ret
+############################
+
+select_pkmn:
+
+addi sp,sp,-8
+sw ra,0(sp)
+sw a0,4(sp)
+
+loop_pkmn_select:	
+	call key
+	li t0,10
+	beq t0,a0,end_pkmn_select
+	call pkmn_select_menu
+	call Frame_changer
+
+	j loop_pkmn_select
+	
+end_pkmn_select:
+		
+	la t0,current_menu
+	lw a0,0(t0)	
+	
+	addi t0,a0,-6
+	mv t6,t0
+	li t1,20
+	mul t0,t0,t1
+	
+	la t2,menu_state
+	sw zero,0(t2)
+	
+	lw t2,4(sp)
+	add t0,t2,t0
+	
+	lw t1,0(t0)
+	
+	blt t1,zero,loop_pkmn_select
+	
+	lw t2,4(t0)
+	lw t3,8(t0)
+	lw t4,12(t0)
+	lw t5,16(t0)
+	
+	la t0,current_player_pkmn
+	
+	sw t1,0(t0)
+	sw t2,4(t0)
+	sw t3,8(t0)
+	sw t4,12(t0)
+	sw t5,16(t0)
+	sw t6,20(t0)	
+
+lw ra,0(sp)
+addi sp,sp,8	
+ret
+
+#############################
+
+calculate_chance:
+# a0 = address array
+
+addi a0,a0,4
+li a1,0
+li a2,4
+
+fcvt.s.w fa0,zero
+
+loop_CC:
+beq a1,a2,end_CC
+
+flw fa1,0(a0)
+fadd.s fa0,fa0,fa1
+
+addi a0,a0,20
+addi a1,a1,1
+j loop_CC
+end_CC:
+
+li a1, 100
+fcvt.s.w fa1,a1
+fdiv.s fa0,fa0,fa1
+
+la t0,constCP1
+flw fa2,0(t0)
+la t0,constCP2
+flw fa3,0(t0)
+
+fmul.s fa2,fa2,fa0
+fadd.s fa2,fa2,fa3
+fmul.s fa1,fa0,fa2
+
+li a0,2
+li a7,43
+ecall
+
+fle.s a0,fa0,fa1
 
 ret
 
