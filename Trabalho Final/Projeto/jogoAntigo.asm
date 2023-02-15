@@ -57,6 +57,7 @@ Dec:
 .include "stages.data"
 .include "scissors.data"
 .include "tree.data"
+#.include "battle/battleText.data"
 .include "menu.data"
 
 .include "battle/battleBG.data"
@@ -98,14 +99,13 @@ exit_pk_select: .word 0,0, 0,200,1
 7, 68,64,118,118
 1, 75,73,107,111
 
-stadium_hb: .word 27,
+stadium_hb: .word 24,
 1, 104,64,120,80
 1, 200,80,216,96
 6, 88,64,136,80,0
 6, 184,80,232,96,1
 1, 72,0,247,24
 1, 56,0,71,239
-8, 157,59,171,78, -1
 1, 248,0,263,239
 1, 104,32,135,65
 1, 136,32,215,52 
@@ -122,18 +122,12 @@ stadium_hb: .word 27,
 1, 104,192,135,229
 1, 184,192,215,229
 1, 216,199,232,230
-#1, 136,112,183,132 
-# 1, 136,112,150,132
-8, 225,111,269,130,6
-1, 168,112,183,132
+1, 136,112,183,132 # 1, 136,112,150,132
+#1, 168,112,183,132
 2, 147,228,172,239, 
 exit_stadium: .word 0,0, 180,50,2
-8, 83,111,97,130,3
-#8, 89,111,103,130,4
-8, 209,111,223,130,5
 
-
-open1_hb: .word 14,
+open1_hb: .word 13,
 1, 0,0,10,198
 3, 11,0,75,84
 2, 0,0,319,20, 
@@ -149,9 +143,8 @@ open1_up: .word 0,0, 0,200,2
 1, 220,199,319,239
 2, 0,229,319,239, 
 open1_down: .word 0,0, 0,185,0
-8, 248,26,262,45,0 
 
-open2_hb: .word 25,
+open2_hb: .word 23,
 1, 0,0,10,239
 1, 11,0,139,33
 1, 140,0,162,52
@@ -177,8 +170,6 @@ open2_down: .word 0,0, 0,20,1
 1, 236,117,299,180
 1, 284,196,299,212
 5, 106,48,120,62
-8, 61,67,75,86,1
-8, 125,129,139,148,2
 
 key: .byte 0
 current_map: .word 0
@@ -221,19 +212,19 @@ pkmns_array:
 
 .word 0  # current_pkmn, if don't -1
 .float 100 # level
-.word 10, 500, 30 # level, stats attack, stats defense 
+.word 10, 50, 10 # level, stats attack, stats defense 
 
 .word 1  # is_active?, current_pkmn
 .float 90 # level
-.word 9, 500, 30 # level, stats attack, stats defense 
+.word 9, 50, 10 # level, stats attack, stats defense 
 
 .word 2  # is_active?, current_pkmn
 .float 80 # level
-.word 8, 500, 30 # level, stats attack, stats defense 
+.word 8, 50, 10 # level, stats attack, stats defense 
 
 .word 3  # is_active?, current_pkmn
 .float 70 # level
-.word 7, 500, 30 # level, stats attack, stats defense 
+.word 7, 50, 10 # level, stats attack, stats defense 
 
 #.word 4  # is_active?, current_pkmn
 #.float 60 # level
@@ -356,17 +347,11 @@ enemy_pkmn_index: .word 0
 
 constCP1: .float 0.0125
 constCP2: .float 0.075
-constCP3: .float 0.8571428571428571
 
-initial_stats: .byte 53,44, 48,50, 49,49, 55,40, 58,40
+guards: .byte 1,1,1,1,1,1,1
 
-guards: .byte 1,1,1,1,0,0,1
-
-battle_type: .word 0,0
-
-dialogo_final:.word 51
-.string "Eh...\n\n\nNao era para eu sair daqui?\n\n\n\nFim de jogo\n"
-      
+battle_type: .word 0
+                
 # normal : 0, fire : 1, water : 2, grass : 3, fighting : a4, dark : 5 
 
 types_matrix: .float
@@ -562,106 +547,14 @@ Dont_Dialog:
 	lw t1,0(t0)
 	beq t1,zero,dont_start_battle
 	
-	la a0,enemy_array
-	mv a1,t1
-	call generate_enemy
-	
 	la a0,pkmns_array
 	la a1,enemy_array
 	call Battle
-
-	#beq a0,zero,perdeu_batalha
-		la t0, battle_type
-		lw t1,0(t0)
-		li t3,3
-		beq t1,t3,boss_state
-		li t3,2
-		bne t1,t3,perdeu_batalha
-		lw t1,4(t0)
-		sw zero,-8(t1)
-		
-		lw t1,12(t1)
-		la t0,guards
-		add t0,t0,t1
-		sb zero,0(t0)
-		j perdeu_batalha
-boss_state:
-		la a0,dialogo_final
-		call Dialog_stop
-		j fim
-				
-perdeu_batalha:
 	
 	la t0, battle_type
 	sw zero,0(t0)
 	
 dont_start_battle:	
-
-################## print guards
-
-	la t0,current_map
-	lb t1,0(t0)
-	li t2,1
-	la t3,guards
-	la t4,guard
-	bne t1,t2,not_map1
-		lb t0,0(t3)
-		beq t0,zero,not_map1
-		li a5,0
-		image(t4,248,26)	
-not_map1:
-	li t2,2
-	bne t1,t2,not_map2
-		la t3,guards
-		lb t0,1(t3)
-		la t4,guard
-		beq t0,zero,not_guard1
-		li a5,0
-		image(t4,61,67)
-not_guard1:
-		la t3,guards
-		lb t0,2(t3)
-		la t4,guard
-		beq t0,zero,not_map2
-		li a5,0
-		image(t4,125,129)	
-not_map2:	
-
-
-li t2,3
-	bne t1,t2,not_map3
-		la t3,guards
-		lb t0,3(t3)
-		la t4,guard
-		beq t0,zero,not_guard3
-		li a5,0
-		image(t4,83,111)
-not_guard3:
-		la t3,guards
-		lb t0,4(t3)
-		la t4,guard
-		beq t0,zero,not_guard4
-		li a5,0
-		image(t4,89,111)
-		
-not_guard4:
-		la t3,guards
-		lb t0,5(t3)
-		la t4,guard
-		beq t0,zero,not_guard5
-		li a5,0
-		#image(t4,217,111)
-		image(t4,209,111)
-not_guard5:
-
-		la t3,guards
-		lb t0,6(t3)
-		la t4,guard
-		beq t0,zero,not_map3
-		li a5,0
-		#image(t4,233,111)
-		image(t4,225,111)
-not_map3:	
 	
 	###################### print player
 	
@@ -733,13 +626,71 @@ not_first_tree:
 		
 no_trees:
 
+################## print guards
 
+	la t0,current_map
+	lb t1,0(t0)
+	li t2,1
+	la t3,guards
+	la t4,guard
+	bne t1,t2,not_map1
+		lb t0,0(t3)
+		beq t0,zero,not_map1
+		image(t4,248,26)	
+not_map1:
+	li t2,2
+	bne t1,t2,not_map2
+		la t3,guards
+		lb t0,1(t3)
+		la t4,guard
+		beq t0,zero,not_guard1
+		image(t4,61,67)
+not_guard1:
+		la t3,guards
+		lb t0,2(t3)
+		la t4,guard
+		beq t0,zero,not_map2
+		image(t4,125,129)	
+not_map2:	
+
+
+li t2,3
+	bne t1,t2,not_map3
+		la t3,guards
+		lb t0,3(t3)
+		la t4,guard
+		beq t0,zero,not_guard3
+		image(t4,73,111)
+not_guard3:
+		la t3,guards
+		lb t0,4(t3)
+		la t4,guard
+		beq t0,zero,not_guard4
+		image(t4,89,111)
+		
+not_guard4:
+		la t3,guards
+		lb t0,5(t3)
+		la t4,guard
+		beq t0,zero,not_guard5
+		image(t4,217,111)
+not_guard5:
+
+		la t3,guards
+		lb t0,6(t3)
+		la t4,guard
+		beq t0,zero,not_map3
+		image(t4,233,111)
+not_map3:	
 
 ################# frame changer
 	call Frame_changer
 	
 j LOOP
-fim: j fim
+
+
+li a7,10
+ecall
 
 ##################### IMAGE
 
@@ -1110,127 +1061,68 @@ PHI9:
         fsw     fa5,0(a3)
         ret
         
-collision_decision2:
-        li      a5,7
-        beq     a0,a5,PHB38
-        li      a5,8
-        beq     a0,a5,PHB39
-        li      a5,3
-        beq     a0,a5,PHB42
-        ret
-PHB42:
-        addi sp,sp,-4
-        sw a7,0(sp)
-        la a0,animation_state
-        lw a1,0(a0)
-        li a0,2
-        li a7,41
-        ecall
-        andi a0,a0,15
-        addi a0,a0,-14
-        slt a0,zero,a0
-        and a0,a0,a1
-        beq a0,zero,dont_battle
-        
-                la a0,battle_type
-                li a1,1
-                sw a1,0(a0)
-        
-dont_battle:
-        lw a7,0(sp)
-        addi sp,sp,4
-        ret
-PHB39:
-        	la a0,battle_type
-                #lw a1,12(a1)
-                sw a1,4(a0)
-                lw a1,12(a1)
-                addi a1,a1,1
-                beq a1,zero, boss_fight
-                li a1,2
-                sw a1,0(a0)
-		ret
-boss_fight:
-		li a1,3
-		sw a1,0(a0)
-                #sw zero,0(a1)
-                #la a1, guards
-                #add a1,a1,a0
-                #sw zero,0(a1)
-                	#sw hitbox_section,4(a0)
-        ret
-PHB38:
-        li      a5,0
-        la a0,key
-        lb a0,0(a0)
-        #mv a5,a0
-        li a5,10
-        bne a0,a5,dont_heal
-        addi sp,sp,-4
-       	sw ra,0(sp)
-       	call heal_pkmns
-       	lw ra,0(sp)
-       	addi sp,sp,4
-        
-dont_heal:        
-        ret
 player_hitbox_interaction:
         addi    sp,sp,-64
-        sw      s8,24(sp)
-        lw      s8,0(a1)
+        sw      s3,44(sp)
+        lw      s3,0(a1)
         sw      ra,60(sp)
         sw      s0,56(sp)
         sw      s1,52(sp)
         sw      s2,48(sp)
-        sw      s3,44(sp)
         sw      s4,40(sp)
         sw      s5,36(sp)
         sw      s6,32(sp)
         sw      s7,28(sp)
+        sw      s8,24(sp)
         sw      s9,20(sp)
         sw      s10,16(sp)
         sw      s11,12(sp)
-        ble     s8,zero,PHB43
-        mv      s9,a0
-        mv      s10,a2
-        mv      s1,a3
-        li      s5,0
+        ble     s3,zero,PHB40
+        mv      s2,a0
+        mv      s6,a2
+        mv      s7,a3
+        li      a7,0
         addi    a5,a1,4
-        li      s7,0
-        li      s2,5
-        li      s3,6
-        li      s6,10
-        li      s4,1
-        li      s11,2
-PHB44:
-        lw      a1,0(s9)
-        lw      a4,12(a5)
-        lw      a0,0(a5)
-        bgt     a1,a4,PHB80
-        lw      a3,4(a5)
-        lw      a4,8(s9)
-        bgt     a3,a4,PHB80
-        lw      a3,12(s9)
-        lw      a4,8(a5)
-        blt     a3,a4,PHB80
-        lw      a3,16(a5)
-        lw      a4,4(s9)
-        blt     a3,a4,PHB80
-        li      a3,1
-        beq     a0,s11,PHB83
-PHB46:
-        addi    a4,a0,-6
-        andi    a4,a4,-3
+        li      s1,0
+        li      s4,2
+        li      s5,6
+        li      s8,5
+        li      s9,7
+        li      s11,10
+        li      s10,1
+        li      t1,3
+PHB64:
+        lw      a6,0(s2)
+        lw      a1,12(a5)
+        lw      a4,0(a5)
+        bgt     a6,a1,PHB76
+        lw      a6,4(a5)
+        lw      a1,8(s2)
+        bgt     a6,a1,PHB76
+        lw      a6,12(s2)
+        lw      a1,8(a5)
+        blt     a6,a1,PHB76
+        lw      a2,16(a5)
+        lw      a3,4(s2)
+        blt     a2,a3,PHB76
+        beq     a4,s4,PHB79
+        bne     a4,s5,PHB57
         addi    s0,a5,8
-        beq     a4,zero,PHB54
-        addi    s0,a5,4
-PHB54:
-        bne     a3,zero,PHB84
-PHB47:
-        addi    s7,s7,1
+        li      a4,0
+        la a0,key
+        lb a0,0(a0)
+        mv a4,a0
+        la t0,has_scissors
+        lb a7,0(t0)
+        #fix this
+        beq a7,zero,PHB44
+        beq     a4,s11,PHB80
+PHB44:
+        addi    s1,s1,1
         addi    a5,s0,16
-        bne     s8,s7,PHB44
-PHB43:
+        bne     s3,s1,PHB64
+PHB40:
+
         lw      ra,60(sp)
         lw      s0,56(sp)
         lw      s1,52(sp)
@@ -1246,163 +1138,147 @@ PHB43:
         lw      s11,12(sp)
         addi    sp,sp,64
         jr      ra
-PHB80:
-        li      a3,0
+PHB76:
         addi    s0,a5,24
-        bne     a0,s11,PHB46
-        j       PHB47
-PHB84:
-        beq     a0,s2,PHB55
-        ble     a0,s2,PHB85
-        bne     a0,s3,PHB58
+        beq     a4,s4,PHB44
+        addi    s0,a5,4
+        bne     a4,s5,PHB44
+        addi    s0,a5,8
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PHB64
+        j       PHB40
+PHB57:
+        addi    s0,a5,4
+        beq     a4,s8,PHB81
+        bgt     a4,s8,PHB62
+        bne     a4,s10,PHB63
+        mv      a3,s7
+        mv      a2,s6
+        mv      a1,s0
+        mv      a0,s2
+        call    new_position
+        addi    s1,s1,1
+        li      a7,0
+        li      t1,3
+        addi    a5,s0,16
+        bne     s3,s1,PHB64
+        j       PHB40
+PHB62:
+        bne     a4,s9,PHB44
         li      a5,0
         la a0,key
         lb a0,0(a0)
         mv a5,a0
-        la t0,has_scissors
-        lb s5,0(t0)
-        #fix this
-        beq s5,zero,PHB58
-        beq     a5,s6,PHB86
-PHB58:
-        mv      a1,s0
-        call    collision_decision2
-        j       PHB47
-PHB85:
-        bne     a0,s4,PHB58
-        lw      a5,4(s10)
-        lw      a4,12(s10)
-        sub     a3,a5,a4
-        beq     a5,a4,PHB87
-        flw     fa5,4(s1)
-        bgt     a3,zero,PHB88
-        lw      a4,4(s9)
-        lw      a3,12(s0)
-        mv      a1,s0
-        sub     a4,a4,a3
-        addi    a4,a4,-1
-        sub     a5,a5,a4
-        sw      a5,4(s10)
-        lw      a5,4(s9)
-        lw      a4,12(s0)
-        sub     a5,a5,a4
-        addi    a5,a5,-1
-        fcvt.s.w        fa4,a5
-        fsub.s  fa5,fa5,fa4
-        fsw     fa5,4(s1)
-        call    collision_decision2
-        j       PHB47
-PHB55:
+        bne     a5,s11,PHB44
+        addi sp,sp,-4
+        sw ra,0(sp)
+        call heal_pkmns
+        lw ra,0(sp)
+        addi sp,sp,4
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PHB64
+        j       PHB40
+PHB81:
         la t0,has_scissors
         sb zero,1(t0)
         li t1,1
         sb t1,0(t0)
-        mv      a1,s0
-        call    collision_decision2
-        j       PHB47
-PHB83:
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PHB64
+        j       PHB40
+PHB79:
         lw      a2,32(a5)
-        lw      a3,4(s10)
-        flw     fa5,4(s1)
+        lw      a3,4(s6)
+        flw     fa5,4(s7)
         lw      a4,28(a5)
         sub     a3,a2,a3
         fcvt.s.w        fa4,a3
         lw      a1,24(a5)
         lw      a3,20(a5)
         fadd.s  fa5,fa5,fa4
-        lw      a6,36(a5)
-        sw      a2,4(s10)
+        lw      a0,36(a5)
+        sw      a2,4(s6)
         addi    s0,a5,24
-        fsw     fa5,4(s1)
-        beq     a4,zero,PHB52
-        lw      a5,0(s10)
-        flw     fa5,0(s1)
-        sw      a4,0(s10)
+        fsw     fa5,4(s7)
+        beq     a4,zero,PHB56
+        lw      a5,0(s6)
+        flw     fa5,0(s7)
+        sw      a4,0(s6)
         sub     a4,a4,a5
         fcvt.s.w        fa4,a4
         fadd.s  fa5,fa5,fa4
-        fsw     fa5,0(s1)
-PHB52:
+        fsw     fa5,0(s7)
+PHB56:
         la t0,current_map
-        sw a6, 0(t0)
+        sw a0, 0(t0)
         sw a3,40(sp)
         sw a1,36(sp)
-        mv      a1,s0
-        call    collision_decision2
-        j       PHB47
-PHB87:
-        lw      a4,0(s10)
-        lw      a5,8(s10)
-        sub     a5,a4,a5
-        ble     a5,zero,PHB61
-        lw      a5,8(s9)
-        lw      a3,0(s0)
-        flw     fa5,0(s1)
-        mv      a1,s0
-        sub     a5,a5,a3
-        addi    a5,a5,1
-        sub     a4,a4,a5
-        sw      a4,0(s10)
-        lw      a5,8(s9)
-        lw      a4,0(s0)
-        sub     a5,a5,a4
-        addi    a5,a5,1
-        fcvt.s.w        fa4,a5
-        fsub.s  fa5,fa5,fa4
-        fsw     fa5,0(s1)
-        call    collision_decision2
-        j       PHB47
-PHB86:
-        lw      a5,12(s0)
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PHB64
+        j       PHB40
+PHB63:
+        bne     a4,t1,PHB44
+        
+        	addi sp,sp,-4
+        sw a7,0(sp)
+#        sw s0,4(sp)
+#        sw s1,8(sp)
+        
+        la a0,animation_state
+        lw a1,0(a0)
+        
+        li a0,2
+        li a7,41
+        ecall
+        
+        andi a0,a0,15
+        addi a0,a0,-14
+        slt a0,zero,a0
+        
+        and a0,a0,a1
+        
+        beq a0,zero,dont_battle
+        
+        la a0,battle_type
+        li a1,1
+        sw a1,0(a0)
+        #la a0,pkmns_array
+        #la a1,enemy_array
+        #call Battle
+        
+dont_battle:
+    
+        lw a7,0(sp)
+        #lw s0,4(sp)
+        #lw s1,8(sp)
+        	addi sp,sp,4
+        
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PHB64
+        j       PHB40
+PHB80:
+        lw      a5,20(a5)
         li      a4,0
         la t0,has_trees
         add t0,t0,a5
         sb zero,0(t0)
         la a4, stadium_hb
-        
+
         slli t0,a5,2
         add t0,t0,a5
         slli t0,t0,2
         addi a4,a4,4
         add a4,a4,t0
-          
         sw zero,0(a4)
-        mv      a1,s0
-        call    collision_decision2
-        j       PHB47
-PHB88:
-        lw      a4,12(s9)
-        lw      a3,4(s0)
-        mv      a1,s0
-        sub     a4,a4,a3
-        addi    a4,a4,1
-        sub     a5,a5,a4
-        sw      a5,4(s10)
-        lw      a5,12(s9)
-        lw      a4,4(s0)
-        sub     a5,a5,a4
-        addi    a5,a5,1
-        fcvt.s.w        fa4,a5
-        fsub.s  fa5,fa5,fa4
-        fsw     fa5,4(s1)
-        call    collision_decision2
-        j       PHB47
-PHB61:
-        beq     a5,zero,PHB58
-        lw      a5,8(s0)
-        flw     fa5,0(s1)
-        sub     a5,a1,a5
-        addi    a5,a5,-1
-        sub     a5,a4,a5
-        sw      a5,0(s10)
-        lw      a5,0(s9)
-        lw      a4,8(s0)
-        sub     a5,a5,a4
-        addi    a5,a5,-1
-        fcvt.s.w        fa4,a5
-        fsub.s  fa5,fa5,fa4
-        fsw     fa5,0(s1)
-        j       PHB58
+        addi    s1,s1,1
+        addi    a5,s0,16
+        bne     s3,s1,PHB64
+        j       PHB40
 
 
 doOverlap:
@@ -2708,13 +2584,10 @@ end_pkmn_select:
 	lw t2,4(sp)
 	add t0,t2,t0
 	
-	#lw t1,0(t0)
-	fcvt.s.w ft1,zero
-	flw ft0,4(t0)
-	fle.s t1,ft0,ft1
-	bne t1,zero,loop_pkmn_select
-	#ble t1,zero,loop_pkmn_select
 	lw t1,0(t0)
+	
+	blt t1,zero,loop_pkmn_select
+	
 	lw t2,4(t0)
 	lw t3,8(t0)
 	lw t4,12(t0)
@@ -2852,146 +2725,5 @@ M4:
         rem     a7,a7,a4
         sw      a7,0(a1)
         j       M8
-                            
-generate_stats:
-# a0 = pkmn address, a1 = level
-
-
-#.float 100 # level
-#.word 10, 50, 10 # level, stats attack, stats defense 
-
-li a2,100
-fcvt.s.w fa0,a2
-fsw fa0,4(a0)
-
-sw a1,8(a0)
-
-addi a2,a1,-1
-fcvt.s.w fa1,a2
-
-la a2,constCP3
-flw fa2,0(a2)
-fmul.s fa1,fa1,fa2
-fcvt.w.s a2,fa1
-
-la a3,initial_stats
-lw a4,0(a0)
-
-slli a4,a4,1
-add a3,a3,a4
-lb a4,0(a3)
-lb a5,1(a3)
-
-add a4,a4,a2
-add a5,a5,a2
-
-sw a4,12(a0)
-sw a5,16(a0)
-
-ret
-
-
-generate_enemy:
-# a0 = enemy_array address, a1 = quantity of enemies
-
-addi sp,sp,-4
-sw ra,0(sp)
-
-li a2, 0
-mv a3,a0
-
-la a0,enemy_pkmns
-sw a1,0(a0)
-
-loop_GE:
-beq a2,a1,end_GE
-
-addi sp,sp,-12
-sw a1,0(sp)
-sw a2,4(sp)
-sw a3,8(sp)
-
-li a0,2
-li a7,41
-ecall
-bge a0,zero,pos_GE
-sub a0,zero,a0
-pos_GE:
-li a4,5
-rem a0,a0,a4
-
-sw a0,0(a3)
-
-mv a0,a3
-li a1,5
-
-
-call generate_stats
-
-lw a1,0(sp)
-lw a2,4(sp)
-lw a3,8(sp)
-addi sp,sp,12
-
-addi a3,a3,20
-addi a2,a2,1
-j loop_GE
-end_GE:
-
-li a2,0
-li a4,4
-sub a1,a4,a1
-li a4,-1
-
-loop_GE2:
-beq a2,a1,end_GE2
-
-sw a4,0(a3)
-
-addi a3,a3,20
-addi a2,a2,1
-j loop_GE2
-end_GE2:
-
-lw ra,0(sp)
-addi sp,sp,4
-
-ret
-
-calculate_prob:
-# a0 = address array
-
-addi a0,a0,4
-li a1,0
-li a2,4
-
-fcvt.s.w fa0,zero
-
-loop_CP:
-beq a1,a2,end_CP
-
-flw fa1,0(a0)
-fadd.s fa0,fa0,fa1
-
-addi a0,a0,20
-addi a1,a1,1
-j loop_CP
-end_CP:
-# fa0 = val
-li a1, 100
-fcvt.s.w fa1,a1
-fdiv.s fa0,fa0,fa1
-
-la t0,constCP1
-flw fa2,0(t0)
-la t0,constCP2
-flw fa3,0(t0)
-
-fmul.s fa2,fa2,fa0
-fadd.s fa2,fa2,fa3
-fmul.s fa0,fa0,fa2
-
-ret
-
-                                                                                                                                                   
+                                                                                        
 .include "../SYSTEMv21.s"
