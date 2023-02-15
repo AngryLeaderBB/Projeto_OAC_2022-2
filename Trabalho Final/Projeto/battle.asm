@@ -234,6 +234,9 @@ types_matrix: .float
 2.0, 1.0, 1.0, 1.0, 1.0, 2.0
 1.0, 1.0, 1.0, 1.0, 0.5, 0.5
 
+#Musica
+.include "bgm/battle_music.data"
+
 .text
 
 #li t1,0xFF200000
@@ -244,6 +247,9 @@ li t0, 1		# inicializa
 sw t0,0(s0)		#
 
 li s1,0xFF000000 # inicializa frame
+
+# Musica
+la s9,  main_track     # Endereco da track_1
 
 ################
 
@@ -759,7 +765,7 @@ end_state:
 
 call print_lifes
 call Frame_changer
-
+jal BGM
 j Player_Loop
 
 Enemy_turn:
@@ -1048,6 +1054,42 @@ END_Inner_I:
 	j Loop_I1
 END_I:
 	ret
+
+BGM:    #ebreak
+	mv t6, a0		
+	li a3,50		# define o volume
+	
+	# TRACK 1
+	li a2,80 	       # define o instrumento
+	lw a0,0(s9)		# le o valor da nota
+	lw a1,4(s9)		# le a duracao da nota
+	li a7,31		# define a chamada de syscall
+	ecall			# toca a nota		
+
+	lw a0,0(s9)		# le o valor da nota
+	li t0, 12
+	sub a0, a0, t0
+	lw a1,4(s9)		# le a duracao da nota
+	li a7,31		# define a chamada de syscall
+	ecall			# toca a nota
+	
+	lw a0,0(s9)		# le o valor da nota
+	li t0, 24
+	sub a0, a0, t0
+	lw a1,4(s9)		# le a duracao da nota
+	li a7,31		# define a chamada de syscall
+	ecall			# toca a nota
+	
+	addi s9,s9,8		# incrementa para o endere?o da pr?xima nota
+	
+	mv a0,a1		# passa a dura??o da nota para a pausa
+	addi a0, a0, -15	# Ajusta velocidade da musica
+	li a7,32		# define a chamada de syscal 
+	ecall			# realiza uma pausa de a0 ms
+	
+	mv a0, t6
+	
+	ret
 	
 #################### bar
 
@@ -1212,6 +1254,8 @@ sw a0,8(sp)
 sw a1,12(sp)
 
 Loop_DS:
+
+jal BGM
 
 la a0, battleText	# Load map
 li a5,0
@@ -1452,59 +1496,59 @@ ret
 #####################################
 
 pkmn_select_menu:
-# a0 = command key
+# a0 = command ke
 
 addi sp,sp,-8
 sw ra,0(sp)
-	sw a0,4(sp)
+sw a0,4(sp)
 
-	la a0, attackSelec	# Load map
-	image(a0, 0, 168, 0)	#
+la a0, attackSelec	# Load map
+image(a0, 0, 168, 0)	#
 
-	lw a0,4(sp)
+lw a0,4(sp)
 
-	la a1, menu_position
-	la a2, lines_columns_pkmns
-	la a3, states_positions_pkmns
-	la a4, current_menu
-	call menu
+la a1, menu_position
+la a2, lines_columns_pkmns
+la a3, states_positions_pkmns
+la a4, current_menu
+call menu
 
-	lw a1, 4 (a0)
-	lw a2, 8 (a0)
-	li a0, 42	# eh relativa a cada jogada
-	# li a3, 0xc700	#
-	li a3, 0xff00
-	srli t0, s1, 20
-	andi a4, t0, 1 	#
-	li a7, 111	#
-	ecall
-	
-	#la t0,pkmn
-	#li t1, 20
-	#li t2, 198
-	#print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
-	
-	li a0,1
-	li a1,48
-	li a2,188
-	li a3,0xc700
-	srai a4,s1,20
-	andi a4,a4,1
-	li a7,101
-	ecall
-	
-	li a0,2
-	addi a1,a1,52
-	ecall
-	
-	li a0,3
-	li a1,48
-	li a2,208
-	ecall
-	
-	li a0,4
-	addi a1,a1,52
-	ecall
+lw a1, 4 (a0)
+lw a2, 8 (a0)
+li a0, 42	# eh relativa a cada jogada
+# li a3, 0xc700	#
+li a3, 0xff00
+srli t0, s1, 20
+andi a4, t0, 1 	#
+li a7, 111	#
+ecall
+
+#la t0,pkmn
+#li t1, 20
+#li t2, 198
+#print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
+
+li a0,1
+li a1,48
+li a2,188
+li a3,0xc700
+srai a4,s1,20
+andi a4,a4,1
+li a7,101
+ecall
+
+li a0,2
+addi a1,a1,52
+ecall
+
+li a0,3
+li a1,48
+li a2,208
+ecall
+
+li a0,4
+addi a1,a1,52
+ecall
 
 lw ra,0(sp) 
 addi sp,sp,8
@@ -1518,7 +1562,8 @@ addi sp,sp,-8
 sw ra,0(sp)
 sw a0,4(sp)
 
-loop_pkmn_select:	
+loop_pkmn_select:  
+	
 	call key
 	li t0,10
 	beq t0,a0,end_pkmn_select
@@ -1528,7 +1573,7 @@ loop_pkmn_select:
 	j loop_pkmn_select
 	
 end_pkmn_select:
-		
+
 	la t0,current_menu
 	lw a0,0(t0)	
 	
