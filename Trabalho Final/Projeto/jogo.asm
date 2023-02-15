@@ -52,12 +52,12 @@ Dec:
 
 .data
 
-.include "mapaTeste.data"
-.include "walk.data"
-.include "stages.data"
-.include "scissors.data"
-.include "tree.data"
-.include "menu.data"
+.include "resources/mapaTeste.data"
+.include "resources/walk.data"
+.include "resources/stages.data"
+.include "resources/scissors.data"
+.include "resources/tree.data"
+.include "resources/menu.data"
 
 .include "battle/battleBG.data"
 .include "battle/battleText.data"
@@ -67,7 +67,7 @@ Dec:
 .include "battle/pkmns.data"
 .include "battle/attackSelec.data"
 
-.include "guard.data"
+.include "resources/guard.data"
 
 CONST_FLOAT: .float 100
 
@@ -377,6 +377,7 @@ types_matrix: .float
 1.0, 1.0, 1.0, 1.0, 0.5, 2.0
 1.0, 1.0, 1.0, 1.0, 2.0, 0.5
 
+.include "bgm/battle_music.data"
 
 .text
 
@@ -1772,6 +1773,9 @@ sw a1,8(sp)
 
 # adicionar inicialiazacao
 # 
+
+la s9, main_track
+
 la a0,menu
 li a5,0
 image(a0,0,0)
@@ -2215,7 +2219,7 @@ end_state:
 
 call print_lifes
 call Frame_changer
-
+call BGM
 j Player_Loop
 
 Enemy_turn:
@@ -2993,5 +2997,42 @@ fmul.s fa0,fa0,fa2
 
 ret
 
+###################### music
+
+BGM:    #ebreak
+	mv t6, a0		
+	li a3,50		# define o volume
+
+	# TRACK 1
+	li a2,80 	       # define o instrumento
+	lw a0,0(s9)		# le o valor da nota
+	lw a1,4(s9)		# le a duracao da nota
+	li a7,31		# define a chamada de syscall
+	ecall			# toca a nota		
+
+	lw a0,0(s9)		# le o valor da nota
+	li t0, 12
+	sub a0, a0, t0
+	lw a1,4(s9)		# le a duracao da nota
+	li a7,31		# define a chamada de syscall
+	ecall			# toca a nota
+
+	lw a0,0(s9)		# le o valor da nota
+	li t0, 24
+	sub a0, a0, t0
+	lw a1,4(s9)		# le a duracao da nota
+	li a7,31		# define a chamada de syscall
+	ecall			# toca a nota
+
+	addi s9,s9,8		# incrementa para o endere?o da pr?xima nota
+
+	mv a0,a1		# passa a dura??o da nota para a pausa
+	addi a0, a0, -15	# Ajusta velocidade da musica
+	li a7,32		# define a chamada de syscal 
+	ecall			# realiza uma pausa de a0 ms
+
+	mv a0, t6
+
+	ret
                                                                                                                                                    
 .include "../SYSTEMv21.s"

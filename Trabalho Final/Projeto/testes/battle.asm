@@ -369,6 +369,17 @@ beq a0,zero,Enemy_turn
                               
 Player_Loop:
 
+#li a7,30
+#ecall
+#mv s3,a0
+
+#li a7,1
+#ecall
+#li a0,10
+#li a7,11
+#ecall
+
+
 call refresh_battle_screen
 
 call key
@@ -1058,37 +1069,49 @@ END_I:
 BGM:    #ebreak
 	mv t6, a0		
 	li a3,50		# define o volume
+
+	li a7,30
+	ecall
 	
+	sub t1,a0,s3
+	lw a0,0(s9)
+	beq a0,zero,erro
+	rem t1,t1,a0
+erro:
+	bge t1,a0,pulou_nota
 	# TRACK 1
 	li a2,80 	       # define o instrumento
 	lw a0,0(s9)		# le o valor da nota
+	sub a0,a0,t1
 	lw a1,4(s9)		# le a duracao da nota
 	li a7,31		# define a chamada de syscall
 	ecall			# toca a nota		
 
 	lw a0,0(s9)		# le o valor da nota
+	sub a0,a0,t1
 	li t0, 12
 	sub a0, a0, t0
 	lw a1,4(s9)		# le a duracao da nota
 	li a7,31		# define a chamada de syscall
 	ecall			# toca a nota
-	
+
 	lw a0,0(s9)		# le o valor da nota
+	sub a0,a0,t1
 	li t0, 24
 	sub a0, a0, t0
 	lw a1,4(s9)		# le a duracao da nota
 	li a7,31		# define a chamada de syscall
 	ecall			# toca a nota
-	
+pulou_nota:
 	addi s9,s9,8		# incrementa para o endere?o da pr?xima nota
-	
-	mv a0,a1		# passa a dura??o da nota para a pausa
-	addi a0, a0, -15	# Ajusta velocidade da musica
-	li a7,32		# define a chamada de syscal 
-	ecall			# realiza uma pausa de a0 ms
-	
+
+	#mv a0,a1		# passa a dura??o da nota para a pausa
+	#addi a0, a0, -15	# Ajusta velocidade da musica
+	#li a7,32		# define a chamada de syscal 
+	#ecall			# realiza uma pausa de a0 ms
+
 	mv a0, t6
-	
+
 	ret
 	
 #################### bar
