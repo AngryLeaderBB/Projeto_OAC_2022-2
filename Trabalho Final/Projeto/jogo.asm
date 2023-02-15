@@ -496,22 +496,11 @@ Dont_Dialog:
 
 	####################  load map
 	li a5,0			
-	#la a0, pkmnSelect
 	mv a0,s4
 	image(a0, 0, 0)	
-	
-	
-	#li a0, 0x00 # color
-	#li a1, 0   # x
-	#li a2, 0   # y
-	#li a3, 100
-	#li a4, 16
-	#li a5, 8
-	#call bar
-	
+		
 	################ update last player position
 	
-	#la t0,player_position
 	lw t1,0(s0)
 	lw t2,4(s0)
 	sw t1,8(s0)
@@ -532,15 +521,12 @@ Dont_Dialog:
 	lw t3,0(t0)
 	lw t4,4(t0)
 	
-	#li t3,14
-	#li t4,18
 	
 	add t3,t3,t1
 	add t4,t4,t2
 	addi t3,t3,-1
 	addi t4,t4,-1
 	
-	#addi t1,t1,14
 	addi t2,t2,12
 	
 	la t0, player_hitbox
@@ -551,7 +537,6 @@ Dont_Dialog:
 	
 	
 	la a0,player_hitbox
-	#la a1,pkmnsSelect
 	mv a1,s5
 	mv a2,s0
 	addi a3,s0,-8
@@ -571,7 +556,6 @@ Dont_Dialog:
 	la a1,enemy_array
 	call Battle
 
-	#beq a0,zero,perdeu_batalha
 		la t0, battle_type
 		lw t1,0(t0)
 		li t3,3
@@ -651,7 +635,6 @@ not_guard4:
 		la t4,guard
 		beq t0,zero,not_guard5
 		li a5,0
-		#image(t4,217,111)
 		image(t4,209,111)
 not_guard5:
 
@@ -660,7 +643,6 @@ not_guard5:
 		la t4,guard
 		beq t0,zero,not_map3
 		li a5,0
-		#image(t4,233,111)
 		image(t4,225,111)
 not_map3:	
 	
@@ -790,7 +772,6 @@ END_Inner_I:
 	addi t2,t2,320
 	mv t0,a1
 	addi t1,t1,1
-	#addi a0,a0,2
 	j Loop_I1
 END_I:
 	ret
@@ -875,7 +856,6 @@ KEY:	li t1,0xFF200000		# carrega o endere�o de controle do KDMMIO
   	lw a0,4(t1)  			# le o valor da tecla tecla
   	la t1,key
   	sb a0,0(t1)
-	#sw a0,12(t1)  			# escreve a tecla pressionada no display
 FIM:	ret	
 
 
@@ -907,13 +887,9 @@ Input_Player:
 	bne a0,t0,Next_Input1
 	la t2,walkSide0
 	li a2,1
-	#addi a3,a3,4
+
 	li a4,-70 #*******
-	
-	#fcvt.s.w ft1,a4		#
-	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
-	#fcvt.w.s a4,ft0		#
-	
+		
 	call Move_Player_Command
 	
 Next_Input1:
@@ -921,12 +897,8 @@ Next_Input1:
 	bne a0,t0,Next_Input2
 	la t2,walkSide0
 	li a2,0
-	#addi a3,a3,4
 	li a4,70 #*******
 	
-	#fcvt.s.w ft1,a4		#
-	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
-	#fcvt.w.s a4,ft0		#
 	
 	call Move_Player_Command
 	
@@ -937,10 +909,7 @@ Next_Input2:
 	li a2,1
 	addi a3,a3,4
 	li a4,70 #*******
-	
-	#fcvt.s.w ft1,a4		#
-	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
-	#fcvt.w.s a4,ft0		#
+		
 	
 	call Move_Player_Command
 	
@@ -951,9 +920,6 @@ Next_Input3:
 	addi a3,a3,4
 	li a4,-70 #*******
 	
-	#fcvt.s.w ft1,a4		#
-	#fmul.s ft0,ft0,ft1	# a4 = a4*delta-time
-	#fcvt.w.s a4,ft0		#
 	
 	bne a0,t0,Next_Input4
 	call Move_Player_Command
@@ -990,50 +956,26 @@ Move_Player:
 	beq zero,t0,Same_Direction
 	sw t2,0(a1)
 	sw a2,4(a1) # change direction
-	
-	#sw a2,4(a1) # change direction
+
 Same_Direction:
 
-	#flw fa0,0(t0)
-	#li a7,2
-	#ecall
-	
-	#fmv.s fa0,ft0
-	#li a7,102
-	#ecall
 	
 	flw ft1,-8(a3)
 	fadd.s ft1,ft1,ft0
 	fsw ft1,-8(a3)
-	#fmv.s fa0,ft1
-	#li a7,2
-	#ecall
 	
 	fcvt.w.s t0,ft1
 	sw t0,0(a3)
 	
+	li a0,53	# nota
+        li a1,10	# duracao
+        li a2,35	# instrumento
+        li a3,40	# volume
+        li a7,31
+        ecall
+	
 	ret
 	
-#Move_Player_Backward:
-#	li t0,1
-#	sw t0,4(a1)
-#
-#	la t0,player_position
-#	lw t1,0(t0)
-#	addi t1,t1,-8
-#	sw t1,0(t0)
-#	
-#	ret
-#
-#Move_Player_Foward:
-#	sw zero,4(a1)
-#	la t0,player_position
-#	lw t1,0(t0)
-#	addi t1,t1,8
-#	sw t1,0(t0)
-#	
-#	ret
-
 ######################### hitbox interactions
 
 new_position:
@@ -1143,7 +1085,6 @@ dont_battle:
         ret
 PHB39:
         	la a0,battle_type
-                #lw a1,12(a1)
                 sw a1,4(a0)
                 lw a1,12(a1)
                 addi a1,a1,1
@@ -1154,17 +1095,11 @@ PHB39:
 boss_fight:
 		li a1,3
 		sw a1,0(a0)
-                #sw zero,0(a1)
-                #la a1, guards
-                #add a1,a1,a0
-                #sw zero,0(a1)
-                	#sw hitbox_section,4(a0)
         ret
 PHB38:
         li      a5,0
         la a0,key
         lb a0,0(a0)
-        #mv a5,a0
         li a5,10
         bne a0,a5,dont_heal
         addi sp,sp,-4
@@ -1262,7 +1197,6 @@ PHB84:
         mv a5,a0
         la t0,has_scissors
         lb s5,0(t0)
-        #fix this
         beq s5,zero,PHB58
         beq     a5,s6,PHB86
 PHB58:
@@ -1443,7 +1377,6 @@ la a0, battleText	# Load map
 li a5,0
 image(a0, 0, 168)
 
-#la t0, current_min_text
 lw t3,4(sp)
 
 lw t0,8(sp)
@@ -1458,7 +1391,6 @@ call KEY
 
 li t1, 10
 bne a0,t1, End_If_DS
-	#la t0, current_min_text
 	beq t2,zero,end_Loop_DS
 	sw t2,4(sp)
 
@@ -1502,8 +1434,7 @@ PrintDialog:
 	
 	srai a4,s1,20
 	andi a4,a4,1
-	#ori a4,s1,-2	 # Frame
-	#neg a4,a4
+
 Loop_PD:	
 	beq t2,t4,End_PD
 Inner_Loop_PB:	
@@ -1556,9 +1487,6 @@ End_PD:
 	li a0,73
 	li a3,0xC7FF
 	
-	#srai a4,s1,20
-	#andi a4,a4,1
-	#li a4,0           #
 
 	li a7,111
 	ecall
@@ -1566,7 +1494,7 @@ End_PD:
 	li a0,62
 	addi a1,a1,2
 	li a3,0xC7FF
-	#li a4,0        #
+
 	ecall
 End_Next_Symbol:
 	beq t5,t0,If_PD
@@ -1620,15 +1548,12 @@ addi sp,sp,-16
 sw ra,0(sp)
 sw t4,4(sp)
 sw a2,8(sp)
-#sw a3,12(sp)
 sw a4,12(sp)
 
 loop_PM:
 beq t2,t3,end_PM
 
-#mv a0,t4
 lw a0,4(sp)
-#mv a1,t2
 lw a1,0(t5)
 addi a1,a1,1
 beq a1,zero,dont_print_menu
@@ -1640,18 +1565,14 @@ call access_name
 li a1, 95
 li a7, 104
 ecall
-#addi a2,a2,37
-#sw a2,8(sp)
 
 li a0,0x33
 li a1,194
-#li a2,41
 lw a2,8(sp)
 addi a2,a2,2
 
 flw fa0,4(t5)
 fcvt.w.s a3,fa0
-#li a3,100
 li a4,61
 li a5,3
 call bar
@@ -1765,15 +1686,6 @@ sw ra,0(sp)
 sw a0,4(sp)
 sw a1,8(sp)
 
-#li s0,0xFF200604	#
-#li t0, 1		# inicializa
-#sw t0,0(s0)		#
-#
-#li s1,0xFF000000 # inicializa frame
-
-# adicionar inicialiazacao
-# 
-
 la s9, main_track
 
 la a0,menu
@@ -1832,9 +1744,6 @@ sw zero, 0(t1)
 not_back:
 
 la t3, current_menu
-#lw t2, 0(t1)
-
-#bne t2,zero,end_select
 li t0, 10
 bne a0, t0, end_select
 lw t0, 0(t3)
@@ -1886,7 +1795,6 @@ beq t0,t1, run_state
 	lw a1, 4 (a0)
 	lw a2, 8 (a0)
 	li a0, 42	# eh relativa a cada jogada
-	# li a3, 0xc700	#
 	li a3, 0xff00
 	srli t0, s1, 20
 	andi a4, t0, 1 	#
@@ -1923,7 +1831,6 @@ la a0,pkmns_array
 call calculate_chance
 bne a0,zero,End_battle
 
-#j end_state
 j Enemy_turn
 
 battle_state:
@@ -1947,15 +1854,12 @@ battle_state:
 	lw a1, 4 (a0)
 	lw a2, 8 (a0)
 	li a0, 42	# eh relativa a cada jogada
-	# li a3, 0xc700	#
 	li a3, 0xff00
 	srli t0, s1, 20
 	andi a4, t0, 1 	#
 	li a7, 111	#
 	ecall 
 
-
-	######################## bug here!!!!!!!!!!!!
 	la t0,current_player_pkmn
 	lw t1,0(t0)
 	slli t1,t1,1 
@@ -2010,15 +1914,6 @@ pkmn_state:
 j end_state
 talk_state:
 
-	#la a0, attackSelec	# Load map
-	#image(a0, 0, 168, 0)	#
-	
-	#la t0,bag
-	#li t1, 20
-	#li t2, 198
-	#print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
-	
-	#j end_state
 	la t2,menu_state
 	sw zero,0(t2)
 	
@@ -2107,10 +2002,7 @@ pkmn_select_state:
 	sw t4,12(t0)
 	sw t5,16(t0)
 	sw t6,20(t0)
-	#li a7,10
-	#ecall
-	
-	#j end_state	
+
 	call refresh_battle_screen
 	call Frame_changer
 	call refresh_battle_screen	
@@ -2167,7 +2059,7 @@ attack_state:
 	add t0,t0,t1
 	
 	lw t1,0(t0)
-	addi t1,t1,-5	# correct this funct
+	addi t1,t1,-5	
 	sw t1,0(t0)
 	
 	
@@ -2195,9 +2087,7 @@ dont_win:
 	lw t2,8(sp)
 	add t0,t2,t0
 	
-	# may cause bug
 	lw t1,0(t0)
-	#blt t1,zero,loop_pkmn_select
 	
 	lw t2,4(t0)
 	lw t3,8(t0)
@@ -2292,11 +2182,10 @@ dont_lose:
 	li a0,0
 	lw a0,4(sp)
 	call select_pkmn			
-	#li a7,10
-	#ecall
+
 	
 	j Player_Loop
-#j Loop
+
 
 End_battle:
 
@@ -2354,7 +2243,6 @@ la t0, life_enemy
 flw ft0,0(t0)
 fcvt.w.s a3,ft0
 
-#li a3, 100
 li a4, 64
 li a5, 5
 call bar
@@ -2383,14 +2271,12 @@ SBS2:
 
 damage:
         lw      a5,0(a1)
-        #lui     a4,%hi(.LC0)
-        #flw     fa3,%lo(.LC0)(a4)
+
         la a4,.LC0
         flw fa3,0(a4)
         
         fcvt.s.w        fa5,a5
-        #lui     a5,%hi(.LC1)
-        #flw     fa4,%lo(.LC1)(a5)
+
         la a5,.LC1
         flw fa4,0(a5)
         
@@ -2401,14 +2287,14 @@ damage:
         fdiv.s  fa5,fa5,fa3
         lw      a5,4(a3)
         fcvt.s.w        fa3,a5
-        #lui     a5,%hi(.LC2)
+
         la a5,.LC2
         
         fadd.s  fa5,fa5,fa4
         fmul.s  fa5,fa5,fa1
         fmul.s  fa5,fa5,fa2
         fdiv.s  fa5,fa5,fa3
-        #flw     fa3,%lo(.LC2)(a5)
+
         flw fa3,0(a5)
         fdiv.s  fa5,fa5,fa3
         fadd.s  fa5,fa5,fa4
@@ -2435,31 +2321,17 @@ sw a4,16(sp)
 mv a1,a0
 
 la a0, attack_section 
-#li a1,1	# attack number
+
 call select_battle_section
 
 lb a3,1(a1)	# attack base damage
 lb a1,0(a1)	# attack type
 
-#mv a0,a1
-#li a7,1
-#ecall
-
-#li a0,10
-#li a7,11
-#ecall
 
 la a0, types_matrix
-##li a1, 4		# attack type ~ i
-#la a2,enemy_type	# deffense type ~ j
 lw a2,16(sp)
 
 call access_matrix
-
-#li a7, 2
-#ecall
-
-# fa0 damage, a3 base damage, 
 
 mv a0, a3
 lw a1,4(sp)
@@ -2500,7 +2372,6 @@ la a0, battleText	# Load map
 li a5,0
 image(a0, 0, 168)
 
-#la t0, current_min_text
 lw t3,4(sp)
 
 lw t0,8(sp)
@@ -2526,7 +2397,6 @@ call KEY
 
 li t1, 10
 bne a0,t1, End_If_DSB
-	#la t0, current_min_text
 	beq t2,zero,end_Loop_DSB
 	sw t2,4(sp)
 
@@ -2639,17 +2509,12 @@ sw ra,0(sp)
 	lw a1, 4 (a0)
 	lw a2, 8 (a0)
 	li a0, 42	# eh relativa a cada jogada
-	# li a3, 0xc700	#
 	li a3, 0xff00
 	srli t0, s1, 20
 	andi a4, t0, 1 	#
 	li a7, 111	#
 	ecall
 	
-	#la t0,pkmn
-	#li t1, 20
-	#li t2, 198
-	#print_dialog(t0, t1, t2, zero, 35, 5, 0xC700)
 	
 	li a0,1
 	li a1,48
@@ -2712,12 +2577,10 @@ end_pkmn_select:
 	lw t2,4(sp)
 	add t0,t2,t0
 	
-	#lw t1,0(t0)
 	fcvt.s.w ft1,zero
 	flw ft0,4(t0)
 	fle.s t1,ft0,ft1
 	bne t1,zero,loop_pkmn_select
-	#ble t1,zero,loop_pkmn_select
 	lw t1,0(t0)
 	lw t2,4(t0)
 	lw t3,8(t0)
@@ -2981,7 +2844,6 @@ addi a0,a0,20
 addi a1,a1,1
 j loop_CP
 end_CP:
-# fa0 = val
 li a1, 100
 fcvt.s.w fa1,a1
 fdiv.s fa0,fa0,fa1
